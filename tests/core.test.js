@@ -7,6 +7,7 @@ import {validateStep} from '../js/validation.js';
 import {validBackup} from '../js/storage.js';
 import {buildMailto} from '../js/export.js';
 import {hashPasscode,verifyPasscode} from '../js/security.js';
+import {applyRecipientFromUrl,buildCustomerUrl,readRecipientFromUrl} from '../js/recipient-link.js';
 
 test('現地調査費を修理概算へ加算しない',()=>{const d=createDraft();Object.assign(d.diagnosis,{symptom:'wire',heightType:'reachable',quantity:'1',buildingType:'house',urgency:'normal',makerStatus:'known'});const e=calculateEstimate(d,DEFAULT_SETTINGS);assert.equal(e.minimumPrice,28000);assert.equal(e.maximumPrice,65000);assert.notEqual(e.minimumPrice,36000)});
 test('数量・高さ・緊急加算を反映する',()=>{const d=createDraft();Object.assign(d.diagnosis,{symptom:'heavy',heightType:'largeLadder',quantity:'3',buildingType:'office',urgency:'immediate',makerStatus:'known'});const e=calculateEstimate(d,DEFAULT_SETTINGS);assert.equal(e.minimumPrice,56000);assert.equal(e.maximumPrice,74000)});
@@ -17,3 +18,7 @@ test('試験送信メールの宛先・件名・本文を生成する',()=>{cons
 test('複数症状を概算へ反映する',()=>{const d=createDraft();Object.assign(d.diagnosis,{symptoms:['heavy','wire'],heightType:'reachable',quantity:'1',buildingType:'house',urgency:'normal',makerStatus:'known'});const e=calculateEstimate(d,DEFAULT_SETTINGS);assert.equal(e.minimumPrice,31000);assert.equal(e.maximumPrice,71000);assert.match(e.estimatedFault,/ワイヤー/);assert.match(e.estimatedFault,/可動部/)});
 test('症状は1つ以上必要で複数選択できる',()=>{const d=createDraft();assert.ok(validateStep(2,d)['diagnosis.symptoms']);d.diagnosis.symptoms=['heavy','noise'];assert.deepEqual(validateStep(2,d),{})});
 test('初期パスコード1234を検証する',async()=>{assert.equal(await hashPasscode('1234'),DEFAULT_SETTINGS.security.settingsPasscodeHash);assert.equal(await verifyPasscode('1234',DEFAULT_SETTINGS.security.settingsPasscodeHash),true);assert.equal(await verifyPasscode('9999',DEFAULT_SETTINGS.security.settingsPasscodeHash),false)});
+test('お客様用URLへ送信先メールだけを設定する',()=>{const url=buildCustomerUrl(' reception+test@example.jp ','https://example.com/app/?old=1#top');assert.equal(url,'https://example.com/app/?recipient=reception%2Btest%40example.jp');assert.deepEqual(readRecipientFromUrl(url),{present:true,email:'reception+test@example.jp'})});
+test('専用URLの送信先を端末設定より優先する',()=>{const settings=applyRecipientFromUrl(DEFAULT_SETTINGS,'https://example.com/app/?recipient=new%40example.jp');assert.equal(settings.company.email,'new@example.jp');assert.equal(DEFAULT_SETTINGS.company.email,'makishi0520@gmail.com')});
+test('無効な送信先を含むURLでは既定メールへ送らない',()=>{const settings=applyRecipientFromUrl(DEFAULT_SETTINGS,'https://example.com/app/?recipient=invalid');assert.equal(settings.company.email,'');assert.throws(()=>buildCustomerUrl('invalid','https://example.com/app/'),/有効な送信先/)});
+test('送信先指定がないURLでは現在設定を維持する',()=>{const settings=applyRecipientFromUrl(DEFAULT_SETTINGS,'https://example.com/app/');assert.equal(settings,DEFAULT_SETTINGS);assert.deepEqual(readRecipientFromUrl('https://example.com/app/'),{present:false,email:null})});
