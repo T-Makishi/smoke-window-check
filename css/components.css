@@ -31,6 +31,11 @@
 .modal-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 10px; }
 .status { display: inline-block; padding: 4px 10px; color: var(--color-secondary); font-size: 14px; font-weight: 800; background: #edf2f5; border-radius: 999px; }
 .tool-row { display: flex; flex-wrap: wrap; gap: 8px; }
+.share-ready { padding: 14px; background: var(--color-success-bg); border: 1px solid var(--color-success); border-radius: var(--radius-input); }
+.share-ready strong { display: block; margin-bottom: 5px; color: var(--color-primary); }
+.qr-code-panel { display: grid; justify-items: center; gap: 14px; text-align: center; }
+.qr-code-canvas { display: block; width: min(100%, 360px); height: auto; background: #fff; border: 10px solid #fff; border-radius: 8px; box-shadow: 0 2px 12px rgba(13,43,69,.15); image-rendering: pixelated; }
+.qr-code-actions { width: 100%; justify-content: center; }
 .warning-text { color: var(--color-danger); font-weight: 800; }
 .success-mark { display: grid; width: 64px; height: 64px; margin: 0 auto 16px; place-items: center; color: #fff; font-size: 34px; line-height: 1; background: var(--color-success); border-radius: 50%; }
 .settings-nav { display: flex; gap: 8px; padding: 3px 3px 12px; overflow: auto; }

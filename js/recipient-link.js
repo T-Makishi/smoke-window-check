@@ -4,6 +4,7 @@ const RECIPIENT_PARAM = 'recipient';
 const CONFIG_PARAM = 'cfg';
 const CONFIG_VERSION = 1;
 const MAX_CONFIG_LENGTH = 12000;
+const MAX_CUSTOMER_URL_LENGTH = 2800;
 const MAX_TEXT_LENGTH = 2000;
 const MAX_AMOUNT = 100000000;
 const MAX_LOGO_DATA_URL_LENGTH = 1800;
@@ -84,7 +85,9 @@ export function buildCustomerUrl(settings, inputUrl) {
   url.hash='';
   url.searchParams.set(RECIPIENT_PARAM,recipient);
   url.searchParams.set(CONFIG_PARAM,encoded);
-  return url.toString();
+  const result=url.toString();
+  if(result.length>MAX_CUSTOMER_URL_LENGTH)throw new Error('お客様用リンクが長すぎます。案内文を短くするか、より単純なロゴ画像を選んでください。');
+  return result;
 }
 
 function publicSettingsFrom(settings){
