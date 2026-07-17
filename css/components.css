@@ -35,7 +35,11 @@
 .share-ready strong { display: block; margin-bottom: 5px; color: var(--color-primary); }
 .qr-code-panel { display: grid; justify-items: center; gap: 14px; text-align: center; }
 .qr-code-canvas { display: block; width: min(100%, 360px); height: auto; background: #fff; border: 10px solid #fff; border-radius: 8px; box-shadow: 0 2px 12px rgba(13,43,69,.15); image-rendering: pixelated; }
+.qr-share-card { aspect-ratio: 3 / 4; object-fit: contain; image-rendering: auto; }
 .qr-code-actions { width: 100%; justify-content: center; }
+.share-guide { width: 100%; margin: 0; padding: 12px 14px; color: var(--color-text); text-align: left; background: #eef8f0; border: 1px solid #b8d9c0; border-radius: var(--radius-input); }
+.line-share-button { background: #06c755; border-color: #06a947; }
+.line-share-button:hover { background: #05b84e; }
 .warning-text { color: var(--color-danger); font-weight: 800; }
 .success-mark { display: grid; width: 64px; height: 64px; margin: 0 auto 16px; place-items: center; color: #fff; font-size: 34px; line-height: 1; background: var(--color-success); border-radius: 50%; }
 .settings-nav { display: flex; gap: 8px; padding: 3px 3px 12px; overflow: auto; }
