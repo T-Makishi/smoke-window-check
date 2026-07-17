@@ -1,0 +1,56 @@
+.button,
+.primary-button,
+.secondary-button {
+  position: relative;
+  display: inline-flex;
+  min-height: 56px;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 11px 18px;
+  color: #fff;
+  font-size: 17px;
+  font-weight: 800;
+  line-height: 1.3;
+  text-align: center;
+  background: var(--color-primary);
+  border: 1.5px solid var(--color-primary);
+  border-radius: var(--radius-button);
+  box-shadow: 0 2px 5px rgba(13,43,69,.1);
+  transition: background-color 120ms ease, border-color 120ms ease;
+}
+.button:hover,
+.primary-button:hover { background: var(--color-primary-dark); border-color: var(--color-primary-dark); }
+.button:active,
+.primary-button:active { background: var(--color-primary-dark); }
+.button:disabled { color: #fff; background: #97a39d; border-color: #97a39d; cursor: not-allowed; }
+.button.secondary,
+.button.ghost,
+.secondary-button { color: var(--color-primary); background: #fff; border-color: var(--color-primary); box-shadow: none; }
+.button.secondary:hover,
+.button.ghost:hover,
+.secondary-button:hover { background: #f1f7f4; }
+.button.danger { color: var(--color-danger); background: #fff; border-color: var(--color-danger); }
+.button.small { min-height: 44px; padding: 8px 12px; font-size: 15px; }
+.button-arrow { margin-left: auto; font-size: 22px; line-height: 1; }
+.sub-button { justify-content: flex-start; }
+.sub-button .button-arrow { margin-left: auto; color: var(--color-text-muted); }
+.fixed-actions,
+.actions {
+  position: fixed;
+  z-index: 20;
+  right: 0;
+  bottom: env(safe-area-inset-bottom);
+  left: 0;
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  padding: 10px max(16px, env(safe-area-inset-right)) 10px max(16px, env(safe-area-inset-left));
+  background: rgba(255,255,255,.97);
+  border-top: 1px solid var(--color-border);
+  backdrop-filter: blur(8px);
+}
+.fixed-actions > *,
+.actions > * { max-width: 230px; flex: 1; }
+.has-progress .fixed-actions,
+.has-progress .actions { bottom: calc(var(--progress-height) + env(safe-area-inset-bottom)); }

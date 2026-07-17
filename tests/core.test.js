@@ -1,0 +1,19 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {DEFAULT_SETTINGS} from '../js/estimate-config.js';
+import {createDraft} from '../js/state.js';
+import {calculateEstimate} from '../js/estimate.js';
+import {validateStep} from '../js/validation.js';
+import {validBackup} from '../js/storage.js';
+import {buildMailto} from '../js/export.js';
+import {hashPasscode,verifyPasscode} from '../js/security.js';
+
+test('現地調査費を修理概算へ加算しない',()=>{const d=createDraft();Object.assign(d.diagnosis,{symptom:'wire',heightType:'reachable',quantity:'1',buildingType:'house',urgency:'normal',makerStatus:'known'});const e=calculateEstimate(d,DEFAULT_SETTINGS);assert.equal(e.minimumPrice,28000);assert.equal(e.maximumPrice,65000);assert.notEqual(e.minimumPrice,36000)});
+test('数量・高さ・緊急加算を反映する',()=>{const d=createDraft();Object.assign(d.diagnosis,{symptom:'heavy',heightType:'largeLadder',quantity:'3',buildingType:'office',urgency:'immediate',makerStatus:'known'});const e=calculateEstimate(d,DEFAULT_SETTINGS);assert.equal(e.minimumPrice,56000);assert.equal(e.maximumPrice,74000)});
+test('法人は会社名必須、個人は不要',()=>{const d=createDraft();d.customerType='corporate';Object.assign(d.customer,{contactName:'山田',phone:'090-1234-5678'});assert.ok(validateStep(1,d)['customer.companyName']);d.customerType='individual';assert.equal(validateStep(1,d)['customer.companyName'],undefined)});
+test('料金同意なしでは進めない',()=>{const d=createDraft();assert.ok(validateStep(6,d).agreed);d.inspectionFee.agreed=true;assert.deepEqual(validateStep(6,d),{})});
+test('JSONバックアップの構造を検証する',()=>{const d=createDraft();d.id='case_test';assert.equal(validBackup({version:1,cases:[d]}),true);assert.equal(validBackup({version:1,cases:[{id:'x'}]}),false)});
+test('試験送信メールの宛先・件名・本文を生成する',()=>{const d=createDraft();d.customer.contactName='送信テスト';d.estimate={minimumPrice:10000,maximumPrice:20000};d.media.count=2;const url=buildMailto(d,DEFAULT_SETTINGS);assert.ok(url.startsWith('mailto:makishi0520@gmail.com?'));assert.ok(decodeURIComponent(url).includes('写真・動画 2点'));assert.ok(decodeURIComponent(url).includes('送信テスト'))});
+test('複数症状を概算へ反映する',()=>{const d=createDraft();Object.assign(d.diagnosis,{symptoms:['heavy','wire'],heightType:'reachable',quantity:'1',buildingType:'house',urgency:'normal',makerStatus:'known'});const e=calculateEstimate(d,DEFAULT_SETTINGS);assert.equal(e.minimumPrice,31000);assert.equal(e.maximumPrice,71000);assert.match(e.estimatedFault,/ワイヤー/);assert.match(e.estimatedFault,/可動部/)});
+test('症状は1つ以上必要で複数選択できる',()=>{const d=createDraft();assert.ok(validateStep(2,d)['diagnosis.symptoms']);d.diagnosis.symptoms=['heavy','noise'];assert.deepEqual(validateStep(2,d),{})});
+test('初期パスコード1234を検証する',async()=>{assert.equal(await hashPasscode('1234'),DEFAULT_SETTINGS.security.settingsPasscodeHash);assert.equal(await verifyPasscode('1234',DEFAULT_SETTINGS.security.settingsPasscodeHash),true);assert.equal(await verifyPasscode('9999',DEFAULT_SETTINGS.security.settingsPasscodeHash),false)});

@@ -1,0 +1,43 @@
+:root {
+  --color-primary: #1e5e3a;
+  --color-primary-dark: #17492e;
+  --color-secondary: #0d2b45;
+  --color-accent: #ff8a00;
+  --color-background: #f5f7f6;
+  --color-surface: #ffffff;
+  --color-border: #d8e0dc;
+  --color-text: #1f2a24;
+  --color-text-muted: #66736c;
+  --color-warning-bg: #fff8e1;
+  --color-warning-border: #e7c85c;
+  --color-danger: #b42318;
+  --color-success: #1e7a46;
+  --color-success-bg: #edf7f1;
+  --color-selected-bg: #eff8f3;
+  --color-focus: #ffb84d;
+  --shadow-card: 0 2px 8px rgba(13, 43, 69, 0.08);
+  --radius-button: 10px;
+  --radius-card: 12px;
+  --radius-input: 8px;
+  --content-width: 480px;
+  --header-height: 64px;
+  --progress-height: 54px;
+
+  /* 従来コードとの互換エイリアス */
+  --main: var(--color-primary);
+  --main-dark: var(--color-primary-dark);
+  --navy: var(--color-secondary);
+  --accent: var(--color-accent);
+  --danger: var(--color-danger);
+  --success: var(--color-success);
+  --bg: var(--color-background);
+  --card: var(--color-surface);
+  --text: var(--color-text);
+  --muted: var(--color-text-muted);
+  --line: var(--color-border);
+  --focus: var(--color-focus);
+  --radius: var(--radius-card);
+  --shadow: var(--shadow-card);
+  --content: var(--content-width);
+  --header: var(--header-height);
+}

@@ -1,0 +1,31 @@
+@media (min-width: 560px) {
+  .page-container, main { padding-right: 20px; padding-left: 20px; }
+}
+@media (max-width: 480px) {
+  .summary-row { grid-template-columns: 1fr; gap: 2px; }
+  .site-header { font-size: 15px; }
+  .feature-item { font-size: 12px; }
+  .fixed-actions .button, .actions .button { padding-right: 10px; padding-left: 10px; }
+}
+@media (max-width: 340px) {
+  .page-container, main { padding-right: 10px; padding-left: 10px; }
+  .site-header { padding-right: 10px; padding-left: 10px; }
+  .brand { gap: 6px; }
+  .logo-mark { width: 34px; height: 34px; }
+  .icon-button { min-width: 48px; padding-right: 7px; padding-left: 7px; }
+  .feature-list { gap: 2px; }
+  .feature-item { padding-right: 1px; padding-left: 1px; font-size: 11px; }
+  .feature-icon { width: 42px; height: 42px; }
+  .fixed-actions, .actions { gap: 8px; padding-right: 10px; padding-left: 10px; }
+  .button, .primary-button, .secondary-button { font-size: 16px; }
+}
+@media print {
+  @page { size: auto; margin: 14mm; }
+  .app-header, .site-header, .progress-section, .progress-wrap, .fixed-actions, .actions, .no-print { display: none !important; }
+  html, body { width: auto; min-width: 0; background: #fff; }
+  body { font-size: 13px; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  main, .page-container { max-width: none; min-height: auto; margin: 0; padding: 0; }
+  .screen { animation: none; }
+  .card { box-shadow: none; break-inside: avoid; }
+  .print-only { display: block; }
+}

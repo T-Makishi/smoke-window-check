@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#174c3c">
+  <meta name="description" content="写真と簡単な質問で排煙窓の修理費用の目安を確認できます">
+  <title>排煙窓かんたん事前チェック</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="css/variables.css">
+  <link rel="stylesheet" href="css/reset.css">
+  <link rel="stylesheet" href="css/layout.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/forms.css">
+  <link rel="stylesheet" href="css/buttons.css">
+  <link rel="stylesheet" href="css/cards.css">
+  <link rel="stylesheet" href="css/progress.css">
+  <link rel="stylesheet" href="css/responsive.css">
+</head>
+<body>
+  <a class="skip-link" href="#main">本文へ移動</a>
+  <header class="site-header app-header">
+    <button class="brand" id="homeButton" type="button" aria-label="トップへ戻る">
+      <span class="logo-mark" id="logoMark" aria-hidden="true">窓</span>
+      <span id="headerCompany">排煙窓サービス</span>
+    </button>
+    <button class="icon-button" id="settingsButton" type="button" aria-label="業者設定を開く">業者設定</button>
+  </header>
+  <main id="main" class="page-container" tabindex="-1"></main>
+  <div class="progress-wrap progress-section" id="progressWrap" hidden>
+    <div class="progress-copy"><span id="stepLabel">STEP 1 / 8</span><span id="stepName">依頼者情報</span></div>
+    <div class="progress-track progress-bar" role="progressbar" aria-label="入力の進捗" aria-valuemin="1" aria-valuemax="8" aria-valuenow="1"><span id="progressBar"></span></div>
+  </div>
+  <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+  <div id="modalRoot"></div>
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,12 @@
+export const DEFAULT_SETTINGS = Object.freeze({
+  company:{name:'排煙窓サービス',tradeName:'',logoDataUrl:'',postalCode:'',address:'',phone:'',email:'makishi0520@gmail.com',hours:'平日 9:00〜17:00',holidays:'土日祝',contactGuide:'お急ぎの場合はお電話でお問い合わせください。'},
+  app:{name:'排煙窓かんたん事前チェック',subtitle:'写真と簡単な質問で、修理費用の目安を確認できます',guide:'専門知識は必要ありません。分かる範囲でお答えください。',mainColor:'#1E5E3A',accentColor:'#FF8A00',notes:'概算は入力内容に基づく目安です。',privacy:'入力内容には個人情報が含まれます。共用端末では保存しないでください。'},
+  inspection:{fee:8000,taxType:'included',deduction:8000,condition:'修理または交換工事を正式にご依頼いただいた場合、工事代金から現地調査費を差し引きます。',transport:'交通費が必要な場合は事前にご案内します。',parking:'有料駐車場を利用する場合は実費をご案内します。',highway:'高速道路料金が必要な場合は実費をご案内します。',remoteArea:0,cancellation:'訪問前のキャンセルは早めにご連絡ください。',absence:'ご不在で調査できない場合は再訪問費が発生することがあります。',heightSurvey:0,specialSurvey:0},
+  pricing:{height:{reachable:0,smallLadder:5000,largeLadder:10000,secondFloor:20000,highLift:30000,unknown:5000},emergency:10000,additionalWindow:12000,additionalSymptomFee:3000,symptoms:{wontOpen:[18000,45000],wontClose:[18000,45000],spins:[22000,50000],heavy:[12000,30000],noise:[10000,28000],wire:[28000,65000],detached:[15000,40000],stops:[18000,48000],leak:[25000,80000],unknown:[15000,60000],other:[15000,60000]}},
+  security:{settingsPasscodeHash:'03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4'}
+});
+
+export const SYMPTOMS = {
+  wontOpen:['開かない','操作しても窓が動かない'],wontClose:['閉まらない','開いた窓を閉じられない'],spins:['ハンドルが空回りする','回しても手応えがない'],heavy:['動きが重い','強い力を入れないと動かない'],noise:['異音がする','操作時にいつもと違う音がする'],wire:['ワイヤーが切れている','線状の部品が切れて見える'],detached:['部品が外れている','金具や部品が取れている'],stops:['窓が途中で止まる','開閉の途中から動かない'],leak:['雨漏りがある','窓の周辺から水が入る'],unknown:['状態がよく分からない','どれを選ぶべきか判断できない'],other:['その他','上記に当てはまらない']
+};
+export const LABELS={customerType:{corporate:'法人・会社',store:'店舗',facility:'マンション・施設管理',individual:'個人',other:'その他'},height:{reachable:'手が届く高さ',smallLadder:'小型脚立が必要',largeLadder:'大型脚立が必要',secondFloor:'2階以上',highLift:'高所作業車が必要と思われる',unknown:'分からない'},building:{house:'戸建住宅',apartment:'集合住宅',store:'店舗',office:'事務所',school:'学校',hospital:'病院',welfare:'福祉施設',factory:'工場',warehouse:'倉庫',commercial:'商業施設',other:'その他'},urgency:{normal:'通常対応でよい',business:'営業や業務に影響がある',safety:'防災上不安がある',falling:'窓や部品が落下しそう',immediate:'すぐに相談したい'},quantity:{'1':'1か所','2':'2か所','3':'3か所','4':'4か所','5plus':'5か所以上',unknown:'数が分からない'},status:{unconfirmed:'未確認',consulting:'相談中',sitePlanned:'現場確認予定',inspected:'現地調査済み',quoted:'見積提出済み',ordered:'受注',completed:'完了',onHold:'保留',cancelled:'キャンセル'}};

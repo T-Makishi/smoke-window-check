@@ -1,0 +1,22 @@
+*, *::before, *::after { box-sizing: border-box; }
+html { font-size: 100%; scroll-behavior: smooth; }
+body {
+  margin: 0;
+  color: var(--color-text);
+  background: var(--color-background);
+  font-family: -apple-system, BlinkMacSystemFont, "Hiragino Kaku Gothic ProN", "Yu Gothic", "Meiryo", sans-serif;
+  font-size: 17px;
+  line-height: 1.65;
+  -webkit-text-size-adjust: 100%;
+  text-rendering: optimizeLegibility;
+}
+button, input, select, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; }
+img, video, svg { display: block; max-width: 100%; }
+h1, h2, h3, p { margin-top: 0; }
+h1, h2, h3 { color: var(--color-secondary); }
+a { color: var(--color-primary); }
+[hidden] { display: none !important; }
+:focus-visible { outline: 3px solid var(--color-focus); outline-offset: 3px; }
+.skip-link { position: fixed; left: 12px; top: -100px; z-index: 1000; padding: 10px 14px; background: #fff; border-radius: 8px; }
+.skip-link:focus { top: 12px; }
