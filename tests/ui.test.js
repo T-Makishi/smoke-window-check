@@ -87,6 +87,14 @@ test('会社別のお客様URLを問診画面へ直接統一する',async()=>{
   assert.doesNotMatch(issuance,/customer\.html/);
 });
 
+test('旧顧客案内URLは識別番号を保持して問診へ自動転送する',async()=>{
+  const redirect=await readFile(new URL('../customer.html',import.meta.url),'utf8');
+  assert.match(redirect,/searchParams\.get\('t'\)/);
+  assert.match(redirect,/location\.replace/);
+  assert.match(redirect,/trial\.html#customer-demo/);
+  assert.doesNotMatch(redirect,/サンプル排煙窓サービス/);
+});
+
 test('利用者削除は会社名確認と関連データ削除を要求する',async()=>{
   const tenantsApi=await readFile(new URL('../functions/api/service/tenants.js',import.meta.url),'utf8');
   const applicationsApi=await readFile(new URL('../functions/api/service/applications.js',import.meta.url),'utf8');
