@@ -108,6 +108,7 @@ details[open] summary { margin-bottom: 10px; }
 .demo-banner { display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 18px; padding: 10px 14px; color: #604600; background: #fff3bd; border: 1px solid #dec360; border-radius: 10px; }
 .demo-banner strong { color: #fff; padding: 3px 9px; background: #8a6200; border-radius: 999px; }
 .demo-banner span { font-size: 13px; font-weight: 700; }
+.demo-home .demo-banner { grid-area: demo; }
 .demo-step-note { display: flex; align-items: center; gap: 10px; margin-bottom: 18px; padding: 12px 14px; color: #604600; background: #fff8d7; border: 1px solid #dec360; border-radius: 10px; }
 .demo-step-note strong { flex: 0 0 auto; }
 .demo-step-note span { font-size: 13px; }

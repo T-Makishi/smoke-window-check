@@ -25,13 +25,6 @@ export function buildTenantCustomerUrl(tenantId,inputUrl){
   return url.toString();
 }
 
-export function buildTenantGuideUrl(tenantId,inputUrl){
-  if(!TENANT_PATTERN.test(String(tenantId||'')))throw new Error('お客様案内URLを作成できません。業者登録を確認してください。');
-  const url=new URL(inputUrl);
-  url.pathname='/customer.html';url.search='';url.hash='';url.searchParams.set(TENANT_PARAM,tenantId);
-  return url.toString();
-}
-
 export function vendorLoginUrl(tenantId,inputUrl){
   const base=new URL(inputUrl);
   const url=new URL('/api/vendor/login',base.origin);

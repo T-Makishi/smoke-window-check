@@ -28,8 +28,7 @@ export async function issueTrialApplication(request,env,application,{manual=fals
 
 export function issuedUrls(request,tenant){
   if(!tenant)throw new HttpError(404,'tenant_not_found','発行済みの利用情報が見つかりません。');
-  const questionnaireUrl=new URL('/',request.url);questionnaireUrl.searchParams.set('t',tenant.id);
-  const customerUrl=new URL('/customer.html',request.url);customerUrl.searchParams.set('t',tenant.id);
-  const adminUrl=new URL(questionnaireUrl);adminUrl.searchParams.set('admin','1');
+  const customerUrl=new URL('/',request.url);customerUrl.searchParams.set('t',tenant.id);
+  const adminUrl=new URL(customerUrl);adminUrl.searchParams.set('admin','1');
   return {tenant:{id:tenant.id,companyName:tenant.company_name,expiresAt:tenant.expires_at},customerUrl:customerUrl.toString(),adminUrl:adminUrl.toString()};
 }

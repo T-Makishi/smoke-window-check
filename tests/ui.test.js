@@ -64,29 +64,27 @@ test('顧客デモはサンプル入力済みで保存・送信しない',async(
   assert.match(app,/サンプル商事株式会社/);
   assert.match(app,/デモ用サンプル入力済み/);
   assert.match(html,/このページは排煙窓の修理・点検会社向けです/);
-  assert.match(html,/各画面はサンプル入力済みです/);
+  assert.match(html,/各画面はサンプル入力済み/);
 });
 
-test('業者向けと見積依頼者向けを別ページに分けて相互移動できる',async()=>{
+test('業者向けLPから顧客デモへ直接移動し、共通の顧客入口を設けない',async()=>{
   const business=await readFile(new URL('../trial.html',import.meta.url),'utf8');
-  const customer=await readFile(new URL('../customer.html',import.meta.url),'utf8');
-  const customerScript=await readFile(new URL('../js/customer-landing.js',import.meta.url),'utf8');
-  assert.match(business,/href="\/customer\.html">見積をご依頼の方/);
-  assert.match(business,/事前見積デモを体験する/);
-  assert.match(customer,/見積をご依頼の方向け/);
-  assert.match(customer,/href="\/trial\.html">業者・修理会社の方/);
-  assert.match(customerScript,/かんたん4ステップ/);
-  assert.match(customerScript,/操作ガイドを印刷・PDF保存/);
-  assert.match(customerScript,/buildTenantCustomerUrl/);
+  const app=await readFile(new URL('../js/app.js',import.meta.url),'utf8');
+  assert.match(business,/href="\/\?demo=1"/);
+  assert.match(business,/顧客向け事前見積を体験する/);
+  assert.doesNotMatch(business,/href="\/customer\.html"/);
+  assert.match(app,/排煙窓事前見積デモ/);
+  assert.doesNotMatch(app,/サンプル排煙窓サービス/);
 });
 
-test('会社別のお客様案内URLを業者設定・運営管理・自動発行で統一する',async()=>{
+test('会社別のお客様URLを問診画面へ直接統一する',async()=>{
   const app=await readFile(new URL('../js/app.js',import.meta.url),'utf8');
   const service=await readFile(new URL('../js/service-admin.js',import.meta.url),'utf8');
   const issuance=await readFile(new URL('../functions/_lib/trial-issuance.js',import.meta.url),'utf8');
-  assert.match(app,/buildTenantGuideUrl/);
-  assert.match(service,/customer\.html\?t=/);
-  assert.match(issuance,/new URL\('\/customer\.html'/);
+  assert.doesNotMatch(app,/buildTenantGuideUrl/);
+  assert.match(service,/location\.origin}\/\?t=/);
+  assert.match(issuance,/new URL\('\/'/);
+  assert.doesNotMatch(issuance,/customer\.html/);
 });
 
 test('利用者削除は会社名確認と関連データ削除を要求する',async()=>{
