@@ -17,6 +17,7 @@ export function publicTenant(row,state,settings=null){
   return {
     id:row.id,
     companyName:row.company_name,
+    vendorEmailHint:maskEmailAddress(row.vendor_email),
     licenseType:row.license_type||'trial',
     trialDays:row.trial_days,
     startsAt:row.starts_at,
@@ -25,4 +26,10 @@ export function publicTenant(row,state,settings=null){
     state,
     ...(settings?{settings}:{}),
   };
+}
+
+export function maskEmailAddress(value){
+  const [local='',domain='']=String(value||'').trim().toLowerCase().split('@');
+  if(!local||!domain)return '';
+  return `${local.slice(0,1)}***@${domain}`;
 }
