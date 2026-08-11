@@ -52,6 +52,10 @@
   .admin-table__row { grid-template-columns: 1fr; }
   .admin-table__row > :last-child { text-align: left; }
   .admin-table__row .tool-row { justify-content: flex-start; }
+  .automation-status { align-items: flex-start; flex-direction: column; }
+  .admin-collapsible > summary,.tenant-disclosure > summary,.admin-record > summary { align-items: flex-start; padding: 16px; }
+  .admin-collapsible > summary .status,.tenant-disclosure > summary .status,.admin-record > summary .status { font-size: 11px; }
+  .admin-collapsible__body,.tenant-disclosure__body { padding-right: 14px; padding-left: 14px; }
   .guide-steps { grid-template-columns: 1fr; }
   .customer-guide__header { align-items: center; }
   .customer-guide__logo { width: 56px; height: 56px; }
@@ -59,6 +63,7 @@
   .customer-guide__contact a { font-size: 20px; }
   .customer-guide__qr canvas { width: 92px; height: 92px; }
   .demo-banner { align-items: flex-start; flex-direction: column; }
+  .demo-step-note { align-items: flex-start; flex-direction: column; }
   .guide-phone-grid { grid-template-columns: 1fr; gap: 24px; }
   .guide-phone { width: 210px; }
   .guide-phone__screen { min-height: 270px; }

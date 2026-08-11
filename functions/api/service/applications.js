@@ -18,7 +18,8 @@ export async function onRequestGet({request,env}){
       db.prepare("SELECT pr.*,t.company_name,t.vendor_email FROM production_requests pr JOIN tenants t ON t.id=pr.tenant_id ORDER BY CASE pr.status WHEN 'requested' THEN 0 ELSE 1 END,pr.requested_at DESC").all(),
     ]);
     const applications=(applicationsResult.results||[]).map(publicApplication),productionRequests=(requestsResult.results||[]).map(row=>({...publicProductionRequest(row),companyName:row.company_name,vendorEmail:row.vendor_email}));
-    return json({ok:true,applications,productionRequests});
+    const emailConfigured=Boolean(env.BREVO_API_KEY&&(env.EMAIL_SENDER_ADDRESS||env.SERVICE_ADMIN_EMAIL));
+    return json({ok:true,applications,productionRequests,emailConfigured});
   }catch(error){return handleError(error)}
 }
 
@@ -50,6 +51,20 @@ export async function onRequestPatch({request,env}){
     }else throw new HttpError(400,'invalid_action','操作が正しくありません。');
     const updated=await db.prepare('SELECT * FROM production_requests WHERE tenant_id=?1').bind(tenantId).first();
     return json({ok:true,request:publicProductionRequest(updated)});
+  }catch(error){return handleError(error)}
+}
+
+export async function onRequestDelete({request,env}){
+  try{
+    await authorizedService(request,env);const body=await readJson(request),applicationId=applicationIdFrom(body.applicationId),db=database(env);
+    const application=await db.prepare('SELECT id,status,tenant_id FROM trial_applications WHERE id=?1').bind(applicationId).first();
+    if(!application)throw new HttpError(404,'not_found','無料体験の申込が見つかりません。');
+    if(application.tenant_id)throw new HttpError(409,'tenant_delete_required','発行済みの申込は、登録業者一覧から利用者を削除してください。');
+    await db.batch([
+      db.prepare('DELETE FROM email_events WHERE application_id=?1').bind(applicationId),
+      db.prepare('DELETE FROM trial_applications WHERE id=?1').bind(applicationId),
+    ]);
+    return json({ok:true,deletedId:applicationId});
   }catch(error){return handleError(error)}
 }
 

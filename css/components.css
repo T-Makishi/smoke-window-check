@@ -63,6 +63,27 @@ details[open] summary { margin-bottom: 10px; }
 .admin-table__row p { margin: 5px 0 0; overflow-wrap: anywhere; }
 .admin-table__row > :last-child { text-align: right; }
 .admin-table__row .tool-row { justify-content: flex-end; margin-top: 10px; }
+.automation-status { display: flex; align-items: center; justify-content: space-between; gap: 24px; border-left: 5px solid var(--color-success); }
+.automation-status h2 { margin-bottom: 5px; }
+.automation-status p { margin: 0; color: var(--color-text-muted); }
+.status--active { color: #fff; background: var(--color-success); }
+.automation-status--warning { border-left-color: var(--color-warning-border); }
+.status--warning { color: #604600; background: #fff3bd; }
+.admin-collapsible,.tenant-disclosure { padding: 0; overflow: clip; }
+.admin-collapsible > summary,.tenant-disclosure > summary,.admin-record > summary { display: flex; align-items: center; justify-content: space-between; gap: 18px; padding: 20px 22px; cursor: pointer; list-style: none; }
+.admin-collapsible > summary::-webkit-details-marker,.tenant-disclosure > summary::-webkit-details-marker,.admin-record > summary::-webkit-details-marker { display: none; }
+.admin-collapsible > summary::after,.tenant-disclosure > summary::after,.admin-record > summary::after { flex: 0 0 auto; color: var(--color-primary); font-size: 22px; content: "＋"; }
+.admin-collapsible[open] > summary::after,.tenant-disclosure[open] > summary::after,.admin-record[open] > summary::after { content: "−"; }
+.admin-collapsible > summary > span:first-child,.tenant-disclosure > summary > span:first-child,.admin-record > summary > span:first-child { display: grid; gap: 4px; min-width: 0; }
+.admin-collapsible > summary small,.tenant-disclosure > summary small,.admin-record > summary small { overflow-wrap: anywhere; color: var(--color-text-muted); }
+.admin-collapsible__body,.tenant-disclosure__body { padding: 0 22px 22px; border-top: 1px solid var(--color-border); }
+.admin-records { display: grid; gap: 10px; padding-top: 16px; }
+.admin-record { border: 1px solid var(--color-border); border-radius: 10px; }
+.admin-record > summary { padding: 14px 16px; }
+.admin-record__body { padding: 0 16px 16px; border-top: 1px solid var(--color-border); }
+.auxiliary-actions { margin: 16px 0; padding: 12px 14px; background: #f6f8f7; border: 1px solid var(--color-border); border-radius: 8px; }
+.auxiliary-actions > summary { color: var(--color-primary); font-weight: 800; cursor: pointer; }
+.tenant-disclosure__body > .summary-list { margin-top: 16px; }
 .customer-guide__document { padding: clamp(18px, 4vw, 34px); background: #fff; border: 1px solid var(--color-border); border-radius: var(--radius-card); box-shadow: var(--shadow-card); }
 .customer-guide__header { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; padding-bottom: 22px; border-bottom: 3px solid var(--color-primary); }
 .customer-guide__header h1 { margin-bottom: 8px; color: var(--color-text); }
@@ -87,6 +108,9 @@ details[open] summary { margin-bottom: 10px; }
 .demo-banner { display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 18px; padding: 10px 14px; color: #604600; background: #fff3bd; border: 1px solid #dec360; border-radius: 10px; }
 .demo-banner strong { color: #fff; padding: 3px 9px; background: #8a6200; border-radius: 999px; }
 .demo-banner span { font-size: 13px; font-weight: 700; }
+.demo-step-note { display: flex; align-items: center; gap: 10px; margin-bottom: 18px; padding: 12px 14px; color: #604600; background: #fff8d7; border: 1px solid #dec360; border-radius: 10px; }
+.demo-step-note strong { flex: 0 0 auto; }
+.demo-step-note span { font-size: 13px; }
 .guide-visuals { margin: 24px 0; padding: 22px; background: #f2f7f4; border: 1px solid #b9d0c3; border-radius: 14px; }
 .guide-visuals > h2 { text-align: center; }
 .guide-visuals__lead { margin: 4px 0 18px; color: var(--color-danger); font-weight: 800; text-align: center; }

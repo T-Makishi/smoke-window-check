@@ -30,7 +30,7 @@ test('無料体験フォームは申込操作と本人確認後の処理を明�
   const html=await readFile(new URL('../trial.html',import.meta.url),'utf8');
   assert.match(html,/7日間無料体験を申し込む/);
   assert.match(html,/確認完了後、運営者へ正式申込として通知され、会社専用URLが発行されます/);
-  assert.match(html,/お客様が実際に使う画面/);
+  assert.match(html,/導入後にお客様が使う画面/);
   assert.match(html,/\?demo=1&amp;embed=1/);
   assert.doesNotMatch(html,/>確認メールを受け取る</);
 });
@@ -45,10 +45,35 @@ test('顧客操作ガイドはスマートフォン図解と印刷導線を追�
 
 test('運営管理は申込の再送・手動承認と運営者メール変更を備える',async()=>{
   const admin=await readFile(new URL('../js/service-admin.js',import.meta.url),'utf8');
-  assert.match(admin,/確認メールを再送/);
+  assert.match(admin,/本人確認メールを再送/);
   assert.match(admin,/手動承認・URL発行/);
+  assert.match(admin,/メール確認後に自動承認/);
+  assert.match(admin,/業者を手動登録する/);
+  assert.match(admin,/通常は不要/);
+  assert.match(admin,/要メール設定/);
+  assert.match(admin,/利用者を完全に削除/);
+  assert.match(admin,/admin-collapsible/);
   assert.match(admin,/運営者メールを変更/);
   assert.match(admin,/ログインIDと無料体験申込の通知先を同時に変更/);
+});
+
+test('顧客デモはサンプル入力済みで保存・送信しない',async()=>{
+  const app=await readFile(new URL('../js/app.js',import.meta.url),'utf8');
+  const html=await readFile(new URL('../trial.html',import.meta.url),'utf8');
+  assert.match(app,/demoSampleDraft/);
+  assert.match(app,/サンプル商事株式会社/);
+  assert.match(app,/デモ用サンプル入力済み/);
+  assert.match(html,/このページは排煙窓の修理・点検会社向けです/);
+  assert.match(html,/各画面はサンプル入力済みです/);
+});
+
+test('利用者削除は会社名確認と関連データ削除を要求する',async()=>{
+  const tenantsApi=await readFile(new URL('../functions/api/service/tenants.js',import.meta.url),'utf8');
+  const applicationsApi=await readFile(new URL('../functions/api/service/applications.js',import.meta.url),'utf8');
+  assert.match(tenantsApi,/confirmation!==row\.company_name/);
+  assert.match(tenantsApi,/DELETE FROM auth_sessions/);
+  assert.match(tenantsApi,/DELETE FROM trial_applications WHERE tenant_id/);
+  assert.match(applicationsApi,/tenant_delete_required/);
 });
 
 test('申込メール障害時は技術的な設定エラーを申込者へ表示しない',async()=>{

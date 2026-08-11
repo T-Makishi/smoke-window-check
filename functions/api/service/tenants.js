@@ -63,6 +63,25 @@ export async function onRequestPatch({request,env}){
   }catch(error){return handleError(error)}
 }
 
+export async function onRequestDelete({request,env}){
+  try{
+    await authorizedService(request,env);
+    const body=await readJson(request),id=tenantIdFrom(body.id),row=await findTenant(env,id),confirmation=String(body.confirmCompanyName||'').trim();
+    if(!row)throw new HttpError(404,'not_found','登録が見つかりません。');
+    if(confirmation!==row.company_name)throw new HttpError(400,'confirmation_mismatch','削除確認の会社名が一致しません。');
+    const subject=vendorPasscodeSubject(id),db=database(env);
+    await db.batch([
+      db.prepare('DELETE FROM auth_sessions WHERE subject=?1').bind(subject),
+      db.prepare('DELETE FROM auth_credentials WHERE subject=?1').bind(subject),
+      db.prepare('DELETE FROM email_events WHERE tenant_id=?1 OR application_id IN (SELECT id FROM trial_applications WHERE tenant_id=?1)').bind(id),
+      db.prepare('DELETE FROM production_requests WHERE tenant_id=?1').bind(id),
+      db.prepare('DELETE FROM trial_applications WHERE tenant_id=?1').bind(id),
+      db.prepare('DELETE FROM tenants WHERE id=?1').bind(id),
+    ]);
+    return json({ok:true,deletedId:id});
+  }catch(error){return handleError(error)}
+}
+
 function randomTenantId(){
   const bytes=crypto.getRandomValues(new Uint8Array(12));
   return `sw_${btoa(String.fromCharCode(...bytes)).replaceAll('+','-').replaceAll('/','_').replace(/=+$/,'')}`;
