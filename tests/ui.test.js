@@ -83,6 +83,16 @@ test('会社別のお客様URLを問診画面へ直接統一する',async()=>{
   assert.doesNotMatch(issuance,/customer\.html/);
 });
 
+test('業者設定の先頭にお客様への案内手段をまとめて表示する',async()=>{
+  const app=await readFile(new URL('../js/app.js',import.meta.url),'utf8');
+  assert.match(app,/お客様へ問診ページを案内する/);
+  assert.match(app,/LINE・SMSなどで直接送る/);
+  assert.match(app,/メール用の案内文をコピー/);
+  assert.match(app,/QRコード画像を作成・送信/);
+  assert.match(app,/お客様用URLをコピー/);
+  assert.match(app,/form\.prepend\(card\)/);
+});
+
 test('旧顧客案内URLは識別番号を保持して問診へ自動転送する',async()=>{
   const redirect=await readFile(new URL('../customer.html',import.meta.url),'utf8');
   assert.match(redirect,/searchParams\.get\('t'\)/);
