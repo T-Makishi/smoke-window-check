@@ -8,7 +8,7 @@ async function initialize(){
     const auth=await api('/api/service/passcode');serviceEmail=auth.user.email;passcodeState=auth.passcode;
     if(!auth.passcode.verified){renderPasscodeGate();return}
     await loadTenants();
-  }catch(error){error.code==='authentication_required'?renderLogin():renderFailure(error.message)}
+  }catch(error){['authentication_required','network_error'].includes(error.code)?renderLogin():renderFailure(error.message)}
 }
 
 async function loadTenants(){const data=await api('/api/service/tenants');tenants=data.tenants;serviceEmail=data.user.email;render()}

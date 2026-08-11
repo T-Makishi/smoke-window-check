@@ -35,7 +35,7 @@ async function initialize(){
         if(auth.passcode.verified){const vendor=await loadVendorTenant(tenantId);settings=mergePublicSettings(DEFAULT_SETTINGS,vendor.tenant.settings);platform.vendorAuthenticated=true}
       }
     }catch(error){
-      if(wantsAdmin(location.href)&&error.code==='authentication_required'){location.href=vendorLoginUrl(tenantId,location.href);return}
+      if(wantsAdmin(location.href)&&['authentication_required','network_error'].includes(error.code)){location.href=vendorLoginUrl(tenantId,location.href);return}
       renderPlatformUnavailable(error.code,error.tenant);return;
     }
   }
