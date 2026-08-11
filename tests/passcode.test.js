@@ -10,13 +10,18 @@ test('パスコードは6〜8桁の安全な数字だけを受け付ける',()=>
   assert.throws(()=>normalizePasscode('777777'),/連続した数字/);
 });
 
-test('PBKDF2ハッシュは同じソルトで再現し、別ソルトでは一致しない',async()=>{
+test('HMACハッシュは同じ秘密鍵とソルトで再現し、異なる値では一致しない',async()=>{
   const saltA=Buffer.from('0123456789abcdef').toString('base64url');
   const saltB=Buffer.from('fedcba9876543210').toString('base64url');
-  const first=await derivePasscodeHash('493827',saltA);
-  assert.equal(await derivePasscodeHash('493827',saltA),first);
-  assert.notEqual(await derivePasscodeHash('493827',saltB),first);
-  assert.notEqual(await derivePasscodeHash('493828',saltA),first);
+  const pepperA='test-only-pepper-with-at-least-32-characters';
+  const pepperB='different-test-pepper-at-least-32-characters';
+  const first=await derivePasscodeHash('493827',saltA,pepperA);
+  assert.match(first,/^hmac-sha256-v1\./);
+  assert.equal(await derivePasscodeHash('493827',saltA,pepperA),first);
+  assert.notEqual(await derivePasscodeHash('493827',saltB,pepperA),first);
+  assert.notEqual(await derivePasscodeHash('493828',saltA,pepperA),first);
+  assert.notEqual(await derivePasscodeHash('493827',saltA,pepperB),first);
+  await assert.rejects(()=>derivePasscodeHash('493827',saltA,'short'),/安全設定/);
 });
 
 test('メール再確認直後だけパスコード再設定を許可する',()=>{

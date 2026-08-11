@@ -7,7 +7,8 @@ export const PASSCODE_LOCK_MINUTES=15;
 export const VENDOR_PASSCODE_COOKIE='sw_vendor_passcode';
 export const SERVICE_PASSCODE_COOKIE='sw_service_passcode';
 
-const PBKDF2_ITERATIONS=310000;
+const PASSCODE_HASH_PREFIX='hmac-sha256-v1.';
+const PASSCODE_PEPPER_MIN_LENGTH=32;
 const FRESH_ACCESS_SECONDS=10*60;
 const PASSCODE_PATTERN=/^\d{6,8}$/;
 const WEAK_PASSCODES=new Set(['000000','111111','123456','654321','12345678','87654321']);
@@ -31,7 +32,7 @@ export async function passcodeStatus(env,{subject,email,request,cookieName}){
 export async function registerPasscode(env,{subject,email,passcode,request,cookieName}){
   const current=await credentialFor(env,subject,email);
   if(current)throw new HttpError(409,'passcode_already_configured','パスコードはすでに登録されています。');
-  const normalized=normalizePasscode(passcode),salt=randomValue(16),hash=await derivePasscodeHash(normalized,salt),now=new Date().toISOString();
+  const normalized=normalizePasscode(passcode),salt=randomValue(16),hash=await derivePasscodeHash(normalized,salt,passcodePepper(env)),now=new Date().toISOString();
   await database(env).prepare(`INSERT INTO auth_credentials
     (subject,email,passcode_salt,passcode_hash,failed_attempts,locked_until,created_at,updated_at)
     VALUES (?1,?2,?3,?4,0,NULL,?5,?5)
@@ -46,7 +47,7 @@ export async function verifyRegisteredPasscode(env,{subject,email,passcode,cooki
   const credential=await credentialFor(env,subject,email);
   if(!credential)throw new HttpError(409,'passcode_setup_required','最初にパスコードを登録してください。');
   enforceLock(credential);
-  const candidate=await derivePasscodeHash(String(passcode||''),credential.passcode_salt);
+  const candidate=await derivePasscodeHash(String(passcode||''),credential.passcode_salt,passcodePepper(env));
   if(!constantTimeEqual(candidate,credential.passcode_hash)){
     await recordFailure(env,credential);
     throw new HttpError(401,'invalid_passcode','パスコードが違います。5回失敗すると15分間ロックされます。');
@@ -57,7 +58,7 @@ export async function verifyRegisteredPasscode(env,{subject,email,passcode,cooki
 
 export async function resetRegisteredPasscode(env,{subject,email,passcode,request,cookieName}){
   if(!isFreshAccessAuthentication(request))throw new HttpError(401,'fresh_email_auth_required','パスコードをリセットするには、メール確認をもう一度行ってください。');
-  const normalized=normalizePasscode(passcode),salt=randomValue(16),hash=await derivePasscodeHash(normalized,salt),now=new Date().toISOString();
+  const normalized=normalizePasscode(passcode),salt=randomValue(16),hash=await derivePasscodeHash(normalized,salt,passcodePepper(env)),now=new Date().toISOString();
   await database(env).prepare(`INSERT INTO auth_credentials
     (subject,email,passcode_salt,passcode_hash,failed_attempts,locked_until,created_at,updated_at)
     VALUES (?1,?2,?3,?4,0,NULL,?5,?5)
@@ -72,12 +73,12 @@ export async function changeRegisteredPasscode(env,{subject,email,currentPasscod
   await requirePasscodeSession(request,env,{subject,email,cookieName});
   const credential=await credentialFor(env,subject,email);
   enforceLock(credential);
-  const candidate=await derivePasscodeHash(String(currentPasscode||''),credential.passcode_salt);
+  const candidate=await derivePasscodeHash(String(currentPasscode||''),credential.passcode_salt,passcodePepper(env));
   if(!constantTimeEqual(candidate,credential.passcode_hash)){
     await recordFailure(env,credential);
     throw new HttpError(401,'invalid_passcode','現在のパスコードが違います。');
   }
-  const normalized=normalizePasscode(newPasscode),salt=randomValue(16),hash=await derivePasscodeHash(normalized,salt),now=new Date().toISOString();
+  const normalized=normalizePasscode(newPasscode),salt=randomValue(16),hash=await derivePasscodeHash(normalized,salt,passcodePepper(env)),now=new Date().toISOString();
   await database(env).prepare('UPDATE auth_credentials SET passcode_salt=?1,passcode_hash=?2,failed_attempts=0,locked_until=NULL,updated_at=?3 WHERE subject=?4 AND email=?5')
     .bind(salt,hash,now,subject,email).run();
   await deleteSubjectSessions(env,subject,email);
@@ -104,10 +105,20 @@ export function isFreshAccessAuthentication(request,now=Date.now()){
   }catch{return false}
 }
 
-export async function derivePasscodeHash(passcode,salt){
-  const key=await crypto.subtle.importKey('raw',new TextEncoder().encode(passcode),'PBKDF2',false,['deriveBits']);
-  const bits=await crypto.subtle.deriveBits({name:'PBKDF2',hash:'SHA-256',salt:fromBase64Url(salt),iterations:PBKDF2_ITERATIONS},key,256);
-  return toBase64Url(new Uint8Array(bits));
+export async function derivePasscodeHash(passcode,salt,pepper){
+  const secret=normalizePasscodePepper(pepper);
+  const key=await crypto.subtle.importKey('raw',new TextEncoder().encode(secret),{name:'HMAC',hash:'SHA-256'},false,['sign']);
+  const message=new TextEncoder().encode(`${PASSCODE_HASH_PREFIX}${salt}.${passcode}`);
+  const signature=await crypto.subtle.sign('HMAC',key,message);
+  return `${PASSCODE_HASH_PREFIX}${toBase64Url(new Uint8Array(signature))}`;
+}
+
+function passcodePepper(env){return normalizePasscodePepper(env.PASSCODE_PEPPER)}
+
+function normalizePasscodePepper(value){
+  const pepper=String(value||'');
+  if(pepper.length<PASSCODE_PEPPER_MIN_LENGTH)throw new HttpError(503,'passcode_security_not_configured','パスコード認証の安全設定が完了していません。サービス運営者へお問い合わせください。');
+  return pepper;
 }
 
 async function credentialFor(env,subject,email){

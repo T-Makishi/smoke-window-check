@@ -44,6 +44,7 @@ python3 -m http.server 4173
 - 出力ディレクトリ: `/`
 - D1 binding: `APP_DB`
 - サービス運営者メール変数: `SERVICE_ADMIN_EMAIL`
+- パスコード用シークレット: `PASSCODE_PEPPER`（32文字以上のランダム値、暗号化して保存）
 
 `main` へのpush後、Cloudflare Pagesが自動でデプロイします。GitHub PagesはCloudflare版の期限確認と認証を検証した後に停止します。
 
@@ -53,11 +54,12 @@ python3 -m http.server 4173
 2. D1コンソールで `schema.sql` を実行する。
 3. PagesプロジェクトのSettings → Bindingsで、D1を変数名 `APP_DB` に割り当てる。
 4. Settings → Variables and Secretsで `SERVICE_ADMIN_EMAIL=makishi0520@gmail.com` を設定する。
-5. 設定反映後に本番デプロイを再実行する。
-6. Cloudflare Zero TrustでOne-time PINを有効にする。
-7. `smoke-window-check.pages.dev/api/vendor/*` と `smoke-window-check.pages.dev/api/service/*` をAccessで保護し、セッション時間を24時間にする。
-8. Access通過後もAPI側で認証メールを照合するため、業者はD1に登録したメール、サービス運営者は `SERVICE_ADMIN_EMAIL` だけが操作できる。
-9. Pages Functionsの無料枠到達時の動作をFail closedにする。
+5. 同じ画面で32文字以上のランダム値を暗号化シークレット `PASSCODE_PEPPER` として設定する。この値を変更すると登録済みパスコードを再登録する必要があるため、通常運用では変更しない。
+6. 設定反映後に本番デプロイを再実行する。
+7. Cloudflare Zero TrustでOne-time PINを有効にする。
+8. `smoke-window-check.pages.dev/api/vendor/*` と `smoke-window-check.pages.dev/api/service/*` をAccessで保護し、セッション時間を24時間にする。
+9. Access通過後もAPI側で認証メールを照合するため、業者はD1に登録したメール、サービス運営者は `SERVICE_ADMIN_EMAIL` だけが操作できる。
+10. Pages Functionsの無料枠到達時の動作をFail closedにする。
 
 設定後は `https://smoke-window-check.pages.dev/service.html` を開き、業者名、業者ログイン用メール、7日・14日・30日の期間を入力して登録します。発行された `?t=...` のURLをお客様へ案内します。
 
