@@ -13,6 +13,7 @@
 .license-banner__inner { display: flex; width: 100%; max-width: var(--content-width); min-height: 42px; align-items: center; justify-content: center; gap: 10px; margin: 0 auto; padding: 8px 16px; font-size: 14px; }
 .license-banner__inner strong { padding: 3px 9px; color: #fff; background: #8a6200; border-radius: 999px; }
 .license-banner__admin { color: var(--color-primary); font-weight: 800; }
+.license-banner__email { margin-left: auto; color: #654b08; font-size: 13px; font-weight: 700; overflow-wrap: anywhere; }
 .hero-section { padding: 4px 0 2px; text-align: center; }
 .hero-kicker { margin-bottom: 10px; color: var(--color-secondary); font-size: 15px; font-weight: 800; }
 .hero-title { max-width: 420px; margin: 0 auto 22px; color: var(--color-text); font-size: clamp(27px, 7.5vw, 34px); line-height: 1.45; letter-spacing: .015em; }
