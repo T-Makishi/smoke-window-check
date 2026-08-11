@@ -4,6 +4,8 @@ import {handleError} from '../../_lib/http.js';
 export function onRequestGet({request,env}){
   try{
     requireServiceAdmin(request,env);
-    return Response.redirect(new URL('/service.html',request.url).toString(),302);
+    const requestUrl=new URL(request.url),target=new URL('/service.html',requestUrl.origin);
+    if(requestUrl.searchParams.get('resetPasscode')==='1')target.searchParams.set('resetPasscode','1');
+    return Response.redirect(target.toString(),302);
   }catch(error){return handleError(error)}
 }

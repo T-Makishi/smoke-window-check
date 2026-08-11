@@ -21,6 +21,7 @@ export function vendorLoginUrl(tenantId,inputUrl){
   const base=new URL(inputUrl);
   const url=new URL('/api/vendor/login',base.origin);
   url.searchParams.set('tenant',tenantId);
+  if(base.searchParams.get('resetPasscode')==='1')url.searchParams.set('resetPasscode','1');
   return url.toString();
 }
 
@@ -37,6 +38,21 @@ export async function loadVendorTenant(tenantId,{fetcher=fetch,origin=location.o
 export async function saveVendorTenant(tenantId,settings,{fetcher=fetch,origin=location.origin}={}){
   const url=new URL('/api/vendor/settings',origin);url.searchParams.set('tenant',tenantId);
   return requestJson(url,{fetcher,credentials:'same-origin',method:'PUT',headers:{'content-type':'application/json'},body:JSON.stringify({settings})});
+}
+
+export async function loadVendorPasscodeState(tenantId,{fetcher=fetch,origin=location.origin}={}){
+  const url=new URL('/api/vendor/passcode',origin);url.searchParams.set('tenant',tenantId);
+  return requestJson(url,{fetcher,credentials:'same-origin'});
+}
+
+export async function submitVendorPasscode(tenantId,body,{fetcher=fetch,origin=location.origin}={}){
+  const url=new URL('/api/vendor/passcode',origin);url.searchParams.set('tenant',tenantId);
+  return requestJson(url,{fetcher,credentials:'same-origin',method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body)});
+}
+
+export async function clearVendorPasscodeSession(tenantId,{fetcher=fetch,origin=location.origin}={}){
+  const url=new URL('/api/vendor/passcode',origin);url.searchParams.set('tenant',tenantId);
+  return requestJson(url,{fetcher,credentials:'same-origin',method:'DELETE'});
 }
 
 export function mergePublicSettings(base,incoming){

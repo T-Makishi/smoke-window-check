@@ -9,12 +9,12 @@ import {settingsFromForm,resetSettings} from './settings.js';
 import {customerFields,renderDetail,renderHistory,renderHome,renderSettings,renderStep} from './ui.js';
 import {hashPasscode,verifyPasscode} from './security.js';
 import {applyCustomerConfigFromUrl,buildCustomerUrl} from './recipient-link.js';
-import {buildTenantCustomerUrl,isTenantUrl,loadPublicTenant,loadVendorTenant,mergePublicSettings,readTenantId,saveVendorTenant,vendorLoginUrl,wantsAdmin} from './cloudflare-platform.js';
+import {buildTenantCustomerUrl,clearVendorPasscodeSession,isTenantUrl,loadPublicTenant,loadVendorPasscodeState,loadVendorTenant,mergePublicSettings,readTenantId,saveVendorTenant,submitVendorPasscode,vendorLoginUrl,wantsAdmin} from './cloudflare-platform.js';
 
 const main=document.querySelector('#main'),progress=document.querySelector('#progressWrap'),headerCompany=document.querySelector('#headerCompany');
 const LOGO_MAX_SOURCE_BYTES=1024*1024,LOGO_EDGE=64,LOGO_MAX_DATA_URL_LENGTH=1800;
 const tenantId=readTenantId(location.href),tenantParamPresent=isTenantUrl(location.href);
-const platform={tenantId,tenant:null,vendorAuthenticated:false,initializing:true,blocked:false};
+const platform={tenantId,tenant:null,vendorAuthenticated:false,passcode:null,userEmail:'',initializing:true,blocked:false};
 let settings=applyCustomerConfigFromUrl(storage.getSettings(DEFAULT_SETTINGS),location.href);let cases=storage.getCases().map(normalizeCase);
 const draftSaved=debounce(()=>{if(appState.step>0&&appState.step<8)try{storage.saveDraft(appState.draft)}catch(e){toast(e.message)}},200);
 
@@ -31,24 +31,58 @@ async function initialize(){
       const result=await loadPublicTenant(tenantId);platform.tenant=result.tenant;settings=mergePublicSettings(DEFAULT_SETTINGS,result.tenant.settings);
       document.querySelector('#settingsButton').textContent='業者ログイン';
       if(wantsAdmin(location.href)){
-        const vendor=await loadVendorTenant(tenantId);settings=mergePublicSettings(DEFAULT_SETTINGS,vendor.tenant.settings);platform.vendorAuthenticated=true;
+        const auth=await loadVendorPasscodeState(tenantId);platform.passcode=auth.passcode;platform.userEmail=auth.user.email;
+        if(auth.passcode.verified){const vendor=await loadVendorTenant(tenantId);settings=mergePublicSettings(DEFAULT_SETTINGS,vendor.tenant.settings);platform.vendorAuthenticated=true}
       }
     }catch(error){
       if(wantsAdmin(location.href)&&error.code==='authentication_required'){location.href=vendorLoginUrl(tenantId,location.href);return}
       renderPlatformUnavailable(error.code,error.tenant);return;
     }
   }
-  platform.initializing=false;applySettings();renderHomeScreen();
+  platform.initializing=false;applySettings();
+  if(wantsAdmin(location.href)&&tenantId&&!platform.vendorAuthenticated){appState.screen='passcode';render();return}
+  renderHomeScreen();
   if(platform.vendorAuthenticated){appState.screen='settings';render()}
 }
 
-function render(){applySettings();progress.hidden=appState.screen!=='wizard'||appState.step===8;document.body.classList.toggle('has-progress',!progress.hidden);if(appState.screen==='home')main.innerHTML=renderHome(settings,!!storage.getDraft());if(appState.screen==='wizard'){main.innerHTML=renderStep(appState.step,appState.draft,settings,appState.mediaFiles);updateProgress()}if(appState.screen==='history')main.innerHTML=renderHistory(cases,settings);if(appState.screen==='settings'){main.innerHTML=renderSettings(settings);enhanceSettings();enhanceShareControls()}if(appState.screen==='detail')main.innerHTML=renderDetail(appState.draft,settings);main.focus({preventScroll:true});scrollTo({top:0,behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'})}
+function render(){applySettings();progress.hidden=appState.screen!=='wizard'||appState.step===8;document.body.classList.toggle('has-progress',!progress.hidden);if(appState.screen==='home')main.innerHTML=renderHome(settings,!!storage.getDraft());if(appState.screen==='wizard'){main.innerHTML=renderStep(appState.step,appState.draft,settings,appState.mediaFiles);updateProgress()}if(appState.screen==='history')main.innerHTML=renderHistory(cases,settings);if(appState.screen==='settings'){main.innerHTML=renderSettings(settings);enhanceSettings();enhanceTenantSecurityCard();enhanceShareControls()}if(appState.screen==='detail')main.innerHTML=renderDetail(appState.draft,settings);if(appState.screen==='passcode')main.innerHTML=renderVendorPasscodeGate();main.focus({preventScroll:true});scrollTo({top:0,behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'})}
 function renderHomeScreen(){appState.screen='home';appState.step=0;render()}
 function goHome(){if(platform.blocked)return;if(appState.screen==='wizard'&&appState.step>0&&appState.step<8)syncForm();renderHomeScreen()}
 function applySettings(){document.documentElement.style.setProperty('--color-primary',settings.app.mainColor);document.documentElement.style.setProperty('--main',settings.app.mainColor);document.documentElement.style.setProperty('--color-accent',settings.app.accentColor);document.documentElement.style.setProperty('--accent',settings.app.accentColor);headerCompany.textContent=settings.company.name;document.title=settings.app.name;const mark=document.querySelector('#logoMark');mark.replaceChildren();if(settings.company.logoDataUrl?.startsWith('data:image/')){const img=document.createElement('img');img.className='logo-image';img.alt='';img.src=settings.company.logoDataUrl;mark.append(img)}else mark.textContent='窓'}
 function updateProgress(){const n=Math.min(appState.step,8);document.querySelector('#stepLabel').textContent=`STEP ${n} / 8`;document.querySelector('#stepName').textContent=['','依頼者情報','症状選択','写真・動画','現場情報','排煙窓の問診','概算・料金','内容確認','保存完了'][n];document.querySelector('#progressBar').style.width=`${n/8*100}%`;const bar=document.querySelector('[role=progressbar]');bar.setAttribute('aria-valuenow',n);bar.setAttribute('aria-valuetext',`8段階中${n}段階、${document.querySelector('#stepName').textContent}`)}
 function start(draft=null){appState.draft=normalizeCase(draft||createDraft());appState.mediaFiles=[];appState.editingId=draft?.id||null;appState.screen='wizard';appState.step=1;render();draftSaved()}
-async function handleClick(e){const action=e.target.closest('[data-action]')?.dataset.action;if(action){if(action==='start')start();if(action==='resume'){const d=storage.getDraft();start(d||null)}if(action==='home')goHome();if(action==='history'){cases=storage.getCases().map(normalizeCase);appState.screen='history';render()}if(action==='help')showHelp();if(action==='back')previous();if(action==='next')next();if(action==='clear-media')clearMedia();if(action==='copy-current')doCopy(appState.draft);if(action==='send-email')sendEmail(appState.draft);if(action==='share-media')await shareMedia(appState.draft);if(action==='print')printCurrentView();if(action==='export')exportBackup();if(action==='delete-all')deleteAll();if(action==='save-settings')await saveSettings();if(action==='save-and-copy-email-link')await saveAndCopyEmailLink();if(action==='save-and-show-qr')await saveAndShowQr();if(action==='save-and-copy-customer-url')await saveAndCopyCustomerUrl();if(action==='remove-logo')removeLogo();if(action==='reset-settings')resetAllSettings()}const rm=e.target.closest('[data-remove-media]');if(rm)removeMedia(Number(rm.dataset.removeMedia));const edit=e.target.closest('[data-edit-step]');if(edit){appState.screen='wizard';appState.step=Number(edit.dataset.editStep);render()}const ca=e.target.closest('[data-case-action]');if(ca)await caseAction(ca.dataset.caseAction,ca.dataset.id)}
+async function handleClick(e){
+  const action=e.target.closest('[data-action]')?.dataset.action;
+  if(action){
+    if(action==='submit-vendor-passcode')await submitVendorPasscodeForm();
+    if(action==='vendor-passcode-reset-help')showVendorResetHelp();
+    if(action==='vendor-change-passcode')showVendorChangePasscode();
+    if(action==='vendor-logout')await logoutVendor();
+    if(action==='start')start();
+    if(action==='resume'){const d=storage.getDraft();start(d||null)}
+    if(action==='home')goHome();
+    if(action==='history'){cases=storage.getCases().map(normalizeCase);appState.screen='history';render()}
+    if(action==='help')showHelp();
+    if(action==='back')previous();
+    if(action==='next')next();
+    if(action==='clear-media')clearMedia();
+    if(action==='copy-current')doCopy(appState.draft);
+    if(action==='send-email')sendEmail(appState.draft);
+    if(action==='share-media')await shareMedia(appState.draft);
+    if(action==='print')printCurrentView();
+    if(action==='export')exportBackup();
+    if(action==='delete-all')deleteAll();
+    if(action==='save-settings')await saveSettings();
+    if(action==='save-and-copy-email-link')await saveAndCopyEmailLink();
+    if(action==='save-and-show-qr')await saveAndShowQr();
+    if(action==='save-and-copy-customer-url')await saveAndCopyCustomerUrl();
+    if(action==='remove-logo')removeLogo();
+    if(action==='reset-settings')resetAllSettings();
+  }
+  const rm=e.target.closest('[data-remove-media]');if(rm)removeMedia(Number(rm.dataset.removeMedia));
+  const edit=e.target.closest('[data-edit-step]');if(edit){appState.screen='wizard';appState.step=Number(edit.dataset.editStep);render()}
+  const ca=e.target.closest('[data-case-action]');if(ca)await caseAction(ca.dataset.caseAction,ca.dataset.id)
+}
 function handleChange(e){if(e.target.id==='mediaInput')addMedia([...e.target.files]);if(e.target.id==='importInput')importBackup(e.target.files[0]);if(e.target.id==='companyLogo')loadLogo(e.target.files[0]);if(e.target.name==='customerType'){syncForm();appState.draft.customerType=e.target.value;document.querySelector('#customerFields').innerHTML=customerFields(appState.draft);draftSaved()}if(e.target.id==='agreed'){appState.draft.inspectionFee.agreed=e.target.checked;appState.draft.inspectionFee.agreedAt=e.target.checked?new Date().toISOString():null;draftSaved()}if(e.target.id==='company.email')updateCustomerUrlPreview()}
 function handleInput(){if(appState.screen==='wizard'){syncForm();draftSaved()}}
 function syncForm(){const form=document.querySelector('#stepForm');if(!form)return;const symptomInputs=[...form.querySelectorAll('[name="diagnosis.symptoms"]')];if(symptomInputs.length){const values=symptomInputs.filter(input=>input.checked).map(input=>input.value);appState.draft.diagnosis.symptoms=values;appState.draft.diagnosis.symptom=values[0]||''}for(const [name,value] of new FormData(form)){if(name==='diagnosis.symptoms')continue;setPath(appState.draft,name,value)}}
@@ -128,7 +162,44 @@ function updateCustomerUrlPreview(){const form=document.querySelector('#settings
 
 function normalizeCase(value){const c=value&&typeof value==='object'?value:createDraft();c.diagnosis??=createDraft().diagnosis;if(!Array.isArray(c.diagnosis.symptoms))c.diagnosis.symptoms=c.diagnosis.symptom?[c.diagnosis.symptom]:[];c.diagnosis.symptoms=[...new Set(c.diagnosis.symptoms.filter(key=>typeof key==='string'))];c.diagnosis.symptom=c.diagnosis.symptoms[0]||c.diagnosis.symptom||'';return c}
 
-function requestSettingsAccess(){if(platform.tenantId){if(platform.vendorAuthenticated){appState.screen='settings';render();return}location.href=vendorLoginUrl(platform.tenantId,location.href);return}showModal('業者設定を開く','<p>この画面は排煙窓会社の担当者専用です。</p><div class="field"><label for="settingsPasscode">パスコード</label><input id="settingsPasscode" type="password" inputmode="numeric" maxlength="8" autocomplete="current-password"><p class="error" id="passcodeError" hidden></p></div>',verifySettingsPasscode);const save=document.querySelector('#modalSave');save.textContent='確認して開く';document.querySelector('#settingsPasscode').focus()}
+function renderVendorPasscodeGate(){
+  const resetRequested=new URL(location.href).searchParams.get('resetPasscode')==='1';
+  const state=platform.passcode||{},mode=resetRequested?'reset':state.configured?'verify':'register';
+  const title=mode==='reset'?'パスコードを再設定':mode==='verify'?'パスコードを入力':'パスコードを登録';
+  const intro=mode==='reset'?'メール確認が完了しました。新しいパスコードを登録してください。':mode==='verify'?'登録済みのパスコードを入力してください。':'初回利用のため、登録メールアドレス専用のパスコードを設定してください。';
+  if(mode==='reset'&&!state.resetAllowed)return `<section class="screen"><div class="card stack empty-state"><p class="eyebrow">業者設定・運営者ログイン</p><h1>メール確認をもう一度行ってください</h1><p>安全に再設定するため、一度ログアウトして登録メールアドレスへ新しい確認コードを送信します。</p><button class="button" data-action="vendor-passcode-reset-help" type="button">再設定手順を開く</button></div></section>`;
+  return `<section class="screen"><div class="screen-header"><p class="eyebrow">業者設定・運営者ログイン</p><h1>${title}</h1><p class="screen-intro">${intro}</p><p class="hint">登録メール：${escapeHtml(platform.userEmail)}</p></div><div class="card stack"><div class="field"><label for="vendorPasscode">${mode==='verify'?'パスコード':'新しいパスコード'}</label><input id="vendorPasscode" type="password" inputmode="numeric" pattern="[0-9]*" minlength="6" maxlength="8" autocomplete="${mode==='verify'?'current-password':'new-password'}"><p class="hint">6〜8桁の数字。123456や同じ数字の繰り返しは使用できません。</p></div>${mode==='verify'?'':`<div class="field"><label for="vendorPasscodeConfirm">新しいパスコード（確認）</label><input id="vendorPasscodeConfirm" type="password" inputmode="numeric" pattern="[0-9]*" minlength="6" maxlength="8" autocomplete="new-password"></div>`}<p class="error" id="passcodeGateError" hidden></p><button class="button" data-action="submit-vendor-passcode" data-mode="${mode}" type="button">${mode==='verify'?'確認して設定を開く':'登録して設定を開く'}</button>${mode==='verify'?'<button class="button ghost" data-action="vendor-passcode-reset-help" type="button">パスコードを忘れた場合</button>':''}</div><div class="card"><h2>確認コードが届かない場合</h2><p class="hint">メール確認画面でコードを再送してください。新しいコードを発行すると古いコードは無効になります。迷惑メールフォルダと noreply@notify.cloudflare.com の受信設定も確認してください。</p></div></section>`;
+}
+
+async function submitVendorPasscodeForm(){
+  const button=document.querySelector('[data-action="submit-vendor-passcode"]'),mode=button?.dataset.mode,input=document.querySelector('#vendorPasscode'),confirmation=document.querySelector('#vendorPasscodeConfirm'),error=document.querySelector('#passcodeGateError');
+  const passcode=input?.value.trim()||'';
+  if(!/^\d{6,8}$/.test(passcode)){showPasscodeError(error,input,'パスコードは6〜8桁の数字で入力してください。');return}
+  if(confirmation&&passcode!==confirmation.value.trim()){showPasscodeError(error,confirmation,'確認用パスコードが一致しません。');return}
+  button.disabled=true;
+  try{
+    await submitVendorPasscode(platform.tenantId,{action:mode,passcode});
+    const vendor=await loadVendorTenant(platform.tenantId);settings=mergePublicSettings(DEFAULT_SETTINGS,vendor.tenant.settings);platform.vendorAuthenticated=true;platform.passcode={configured:true,verified:true,resetAllowed:false};
+    const url=new URL(location.href);url.searchParams.delete('resetPasscode');history.replaceState(null,'',url);appState.screen='settings';render();toast(mode==='verify'?'ログインしました。':'パスコードを登録しました。');
+  }catch(caught){showPasscodeError(error,input,caught.message)}finally{button.disabled=false}
+}
+
+function showPasscodeError(error,input,message){if(error){error.textContent=message;error.hidden=false}input?.classList.add('is-invalid');input?.focus();input?.select()}
+
+function showVendorResetHelp(){
+  const resetUrl=new URL(location.href);resetUrl.searchParams.set('t',platform.tenantId);resetUrl.searchParams.set('admin','1');resetUrl.searchParams.set('resetPasscode','1');
+  showModal('パスコードを再設定',`<ol><li>下のボタンで再設定用URLをコピーしてログアウトします。</li><li>コピーしたURLを開きます。</li><li>登録メールアドレスを入力し、新しい確認コードで認証します。</li><li>新しいパスコードを登録します。</li></ol><p class="hint">確認コードは1回限り有効です。届かない場合は認証画面から再送してください。</p>`,async()=>{try{await copyText(resetUrl.toString());await clearVendorPasscodeSession(platform.tenantId);location.href='/cdn-cgi/access/logout'}catch{toast('再設定用URLをコピーできませんでした。')}});document.querySelector('#modalSave').textContent='URLをコピーしてログアウト';
+}
+
+function showVendorChangePasscode(){showModal('パスコードを変更','<div class="field"><label for="currentVendorPasscode">現在のパスコード</label><input id="currentVendorPasscode" type="password" inputmode="numeric" maxlength="8" autocomplete="current-password"></div><div class="field"><label for="newVendorPasscode">新しいパスコード</label><input id="newVendorPasscode" type="password" inputmode="numeric" minlength="6" maxlength="8" autocomplete="new-password"></div><div class="field"><label for="confirmVendorPasscode">新しいパスコード（確認）</label><input id="confirmVendorPasscode" type="password" inputmode="numeric" minlength="6" maxlength="8" autocomplete="new-password"></div><p class="error" id="changePasscodeError" hidden></p>',changeVendorPasscode);document.querySelector('#modalSave').textContent='変更する'}
+
+async function changeVendorPasscode(){const current=document.querySelector('#currentVendorPasscode'),next=document.querySelector('#newVendorPasscode'),confirmation=document.querySelector('#confirmVendorPasscode'),error=document.querySelector('#changePasscodeError'),button=document.querySelector('#modalSave');if(!/^\d{6,8}$/.test(next.value.trim())){showPasscodeError(error,next,'新しいパスコードは6〜8桁の数字で入力してください。');return}if(next.value.trim()!==confirmation.value.trim()){showPasscodeError(error,confirmation,'確認用パスコードが一致しません。');return}button.disabled=true;try{await submitVendorPasscode(platform.tenantId,{action:'change',currentPasscode:current.value.trim(),newPasscode:next.value.trim()});closeModal();toast('パスコードを変更しました。')}catch(caught){showPasscodeError(error,current,caught.message)}finally{button.disabled=false}}
+
+async function logoutVendor(){try{await clearVendorPasscodeSession(platform.tenantId)}finally{location.href='/cdn-cgi/access/logout'}}
+
+function enhanceTenantSecurityCard(){if(!platform.tenantId||!platform.vendorAuthenticated)return;const form=document.querySelector('#settingsForm');if(!form)return;const card=document.createElement('div');card.className='card stack';card.innerHTML=`<h2>ログインとパスコード</h2><p class="hint">ログイン中：${escapeHtml(platform.userEmail)}</p><p class="hint">メール確認と登録者専用パスコードで保護されています。ログイン状態は24時間有効です。</p><div class="tool-row"><button class="button secondary" type="button" data-action="vendor-change-passcode">パスコードを変更</button><button class="button ghost" type="button" data-action="vendor-logout">ログアウト</button></div>`;form.insertBefore(card,form.lastElementChild)}
+
+function requestSettingsAccess(){if(platform.tenantId){if(platform.vendorAuthenticated){appState.screen='settings';render();return}showModal('業者設定・運営者ログイン','<p>登録メールアドレスへ確認コードを送信し、その後に登録者専用パスコードを確認します。</p><p class="hint">確認コードが届かない場合は、認証画面から再送できます。迷惑メールフォルダも確認してください。</p>',()=>{location.href=vendorLoginUrl(platform.tenantId,location.href)});const save=document.querySelector('#modalSave');save.textContent='メール確認へ進む';return}showModal('業者設定を開く','<p>この画面は排煙窓会社の担当者専用です。</p><div class="field"><label for="settingsPasscode">パスコード</label><input id="settingsPasscode" type="password" inputmode="numeric" maxlength="8" autocomplete="current-password"><p class="error" id="passcodeError" hidden></p></div>',verifySettingsPasscode);const save=document.querySelector('#modalSave');save.textContent='確認して開く';document.querySelector('#settingsPasscode').focus()}
 async function verifySettingsPasscode(){const input=document.querySelector('#settingsPasscode'),error=document.querySelector('#passcodeError');if(!(await verifyPasscode(input.value,settings.security.settingsPasscodeHash))){error.textContent='パスコードが違います。';error.hidden=false;input.classList.add('is-invalid');input.select();return}closeModal();appState.screen='settings';render()}
 
 function printCurrentView(){const previousTitle=document.title;const customer=appState.draft?.customer;document.title=`排煙窓事前チェック_${customer?.companyName||customer?.storeName||customer?.facilityName||customer?.contactName||'相談内容'}`;const restore=()=>{document.title=previousTitle;document.body.classList.remove('is-printing')};document.body.classList.add('is-printing');try{window.print();restore();setTimeout(()=>toast('印刷画面が開かない場合は、ブラウザのメニューから「印刷」または「プリント」を選択してください。'),100)}catch{restore();toast('印刷画面を開けませんでした。ブラウザのメニューから「印刷」または「プリント」を選択してください。')}}

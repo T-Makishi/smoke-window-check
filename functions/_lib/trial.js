@@ -17,9 +17,16 @@ export function trialWindow(daysValue,nowValue=new Date()){
   return {startsAt:now.toISOString(),expiresAt:expiresAt.toISOString()};
 }
 
+export function productionWindow(nowValue=new Date()){
+  const now=new Date(nowValue);
+  if(Number.isNaN(now.getTime()))throw new Error('開始日時が正しくありません。');
+  return {startsAt:now.toISOString(),expiresAt:'9999-12-31T14:59:59.999Z'};
+}
+
 export function licenseState(row,nowValue=new Date()){
   if(!row)return 'not_found';
   if(row.status!=='active')return 'suspended';
+  if(row.license_type==='production')return 'active';
   const expiresAt=new Date(row.expires_at),now=new Date(nowValue);
   if(Number.isNaN(expiresAt.getTime()))return 'invalid';
   return now.getTime()<=expiresAt.getTime()?'active':'expired';

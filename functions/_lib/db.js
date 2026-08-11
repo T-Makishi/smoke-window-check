@@ -17,6 +17,7 @@ export function publicTenant(row,state,settings=null){
   return {
     id:row.id,
     companyName:row.company_name,
+    licenseType:row.license_type||'trial',
     trialDays:row.trial_days,
     startsAt:row.starts_at,
     expiresAt:row.expires_at,

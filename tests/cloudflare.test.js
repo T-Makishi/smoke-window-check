@@ -1,8 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {DEFAULT_SETTINGS} from '../js/estimate-config.js';
-import {buildTenantCustomerUrl,mergePublicSettings,readTenantId} from '../js/cloudflare-platform.js';
-import {licenseState,trialWindow} from '../functions/_lib/trial.js';
+import {buildTenantCustomerUrl,mergePublicSettings,readTenantId,vendorLoginUrl} from '../js/cloudflare-platform.js';
+import {licenseState,productionWindow,trialWindow} from '../functions/_lib/trial.js';
 import {sanitizeSettings} from '../functions/_lib/settings.js';
 
 test('短いお客様用URLを生成する',()=>{
@@ -10,6 +10,11 @@ test('短いお客様用URLを生成する',()=>{
   assert.equal(url,'https://smoke-window-check.pages.dev/?t=sw_abcdefghijklmnop');
   assert.equal(readTenantId(url),id);
   assert.equal(readTenantId('https://example.com/?t=invalid'),null);
+});
+
+test('パスコード再設定のログインURLは再設定状態を保持する',()=>{
+  const id='sw_abcdefghijklmnop';
+  assert.equal(vendorLoginUrl(id,`https://smoke-window-check.pages.dev/?t=${id}&admin=1&resetPasscode=1`),`https://smoke-window-check.pages.dev/api/vendor/login?tenant=${id}&resetPasscode=1`);
 });
 
 test('D1の公開設定を既定設定へ安全に統合する',()=>{
@@ -30,6 +35,13 @@ test('7日試験は開始日を含む日本時間の最終日まで利用でき�
 
 test('停止中の登録は期限内でも利用不可',()=>{
   assert.equal(licenseState({status:'suspended',expires_at:'2099-01-01T00:00:00.000Z'}),'suspended');
+});
+
+test('本番利用は期限なし、停止操作は有効',()=>{
+  const window=productionWindow('2026-08-11T00:00:00.000Z');
+  assert.equal(window.expiresAt,'9999-12-31T14:59:59.999Z');
+  assert.equal(licenseState({status:'active',license_type:'production',expires_at:'2000-01-01T00:00:00.000Z'}),'active');
+  assert.equal(licenseState({status:'suspended',license_type:'production',expires_at:window.expiresAt}),'suspended');
 });
 
 test('サーバー保存設定から秘密情報を除外して検証する',()=>{
