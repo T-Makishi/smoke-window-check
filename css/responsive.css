@@ -52,6 +52,12 @@
   .admin-table__row { grid-template-columns: 1fr; }
   .admin-table__row > :last-child { text-align: left; }
   .admin-table__row .tool-row { justify-content: flex-start; }
+  .guide-steps { grid-template-columns: 1fr; }
+  .customer-guide__header { align-items: center; }
+  .customer-guide__logo { width: 56px; height: 56px; }
+  .customer-guide__contact { align-items: flex-start; }
+  .customer-guide__contact a { font-size: 20px; }
+  .customer-guide__qr canvas { width: 92px; height: 92px; }
 }
 @media (max-width: 340px) {
   .page-container, main { padding-right: 10px; padding-left: 10px; }
@@ -66,7 +72,7 @@
   .button, .primary-button, .secondary-button { font-size: 16px; }
 }
 @media print {
-  @page { size: auto; margin: 14mm; }
+  @page { size: A4 portrait; margin: 10mm; }
   .app-header, .site-header, .progress-section, .progress-wrap, .fixed-actions, .actions, .no-print { display: none !important; }
   html, body { width: auto; min-width: 0; background: #fff; }
   body { font-size: 13px; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
@@ -74,4 +80,21 @@
   .screen { animation: none; }
   .card { box-shadow: none; break-inside: avoid; }
   .print-only { display: block; }
+  body.printing-guide .customer-guide__document { padding: 0; border: 0; box-shadow: none; }
+  body.printing-guide .customer-guide__header { padding-bottom: 10px; }
+  body.printing-guide .customer-guide__header h1 { font-size: 24px; }
+  body.printing-guide .customer-guide__header p { margin-bottom: 0; }
+  body.printing-guide .customer-guide__logo { width: 54px; height: 54px; }
+  body.printing-guide .guide-steps { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 8px; margin-top: 12px; }
+  body.printing-guide .guide-steps article { grid-template-columns: 34px 1fr; gap: 8px; padding: 9px; break-inside: avoid; }
+  body.printing-guide .guide-steps article > b { width: 32px; height: 32px; font-size: 16px; }
+  body.printing-guide .guide-steps h2 { font-size: 15px; }
+  body.printing-guide .guide-steps p { margin: 0; font-size: 11px; line-height: 1.45; }
+  body.printing-guide .guide-notes { margin-top: 10px; padding: 10px 12px; }
+  body.printing-guide .guide-notes h2 { font-size: 15px; }
+  body.printing-guide .guide-notes li { font-size: 10.5px; line-height: 1.4; }
+  body.printing-guide .customer-guide__contact { margin-top: 10px; padding-top: 10px; }
+  body.printing-guide .customer-guide__contact a { font-size: 18px; }
+  body.printing-guide .customer-guide__qr canvas { width: 82px; height: 82px; }
+  body.printing-guide .customer-guide__brand { margin-top: 6px; }
 }

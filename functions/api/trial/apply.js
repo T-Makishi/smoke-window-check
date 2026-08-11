@@ -21,7 +21,7 @@ export async function onRequestPost({request,env}){
     }
     const verificationUrl=new URL('/trial.html',request.url);verificationUrl.searchParams.set('verify',token);
     await sendVerificationEmail(env,{applicationId,companyName:input.companyName,contactName:input.contactName,email,verificationUrl:verificationUrl.toString(),tokenHash});
-    return json({ok:true,message:'確認メールを送信しました。30分以内にメール内のリンクを開いてください。'},{status:201});
+    return json({ok:true,message:'入力したメールアドレスへ本人確認リンクを送信しました。30分以内に確認を完了してください。'},{status:201});
   }catch(error){return handleError(error)}
 }
 
