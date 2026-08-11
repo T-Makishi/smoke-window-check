@@ -30,8 +30,9 @@ test('無料体験フォームは申込操作と本人確認後の処理を明�
   const html=await readFile(new URL('../trial.html',import.meta.url),'utf8');
   assert.match(html,/7日間無料体験を申し込む/);
   assert.match(html,/確認完了後、運営者へ正式申込として通知され、会社専用URLが発行されます/);
-  assert.match(html,/導入後にお客様が使う画面/);
-  assert.match(html,/\?demo=1&amp;embed=1/);
+  assert.match(html,/導入後のお客様用画面イメージ/);
+  assert.match(html,/browser-mock/);
+  assert.doesNotMatch(html,/\?demo=1/);
   assert.doesNotMatch(html,/>確認メールを受け取る</);
 });
 
@@ -57,24 +58,16 @@ test('運営管理は申込の再送・手動承認と運営者メール変更�
   assert.match(admin,/ログインIDと無料体験申込の通知先を同時に変更/);
 });
 
-test('顧客デモはサンプル入力済みで保存・送信しない',async()=>{
-  const app=await readFile(new URL('../js/app.js',import.meta.url),'utf8');
-  const html=await readFile(new URL('../trial.html',import.meta.url),'utf8');
-  assert.match(app,/demoSampleDraft/);
-  assert.match(app,/サンプル商事株式会社/);
-  assert.match(app,/デモ用サンプル入力済み/);
-  assert.match(html,/このページは排煙窓の修理・点検会社向けです/);
-  assert.match(html,/各画面はサンプル入力済み/);
-});
-
-test('業者向けLPから顧客デモへ直接移動し、共通の顧客入口を設けない',async()=>{
+test('業者向けLPは静止モックだけを表示し、顧客デモページへ移動させない',async()=>{
   const business=await readFile(new URL('../trial.html',import.meta.url),'utf8');
   const app=await readFile(new URL('../js/app.js',import.meta.url),'utf8');
-  assert.match(business,/href="\/\?demo=1"/);
-  assert.match(business,/顧客向け事前見積を体験する/);
+  assert.match(business,/導入後のお客様用画面イメージ/);
+  assert.match(business,/browser-mock/);
+  assert.doesNotMatch(business,/href="\/\?demo=1"/);
+  assert.doesNotMatch(business,/customer-demo-phone/);
   assert.doesNotMatch(business,/href="\/customer\.html"/);
-  assert.match(app,/排煙窓事前見積デモ/);
-  assert.doesNotMatch(app,/サンプル排煙窓サービス/);
+  assert.match(app,/if\(demoMode\)\{location\.replace\('\/trial\.html#features'/);
+  assert.doesNotMatch(app,/demoSampleDraft/);
 });
 
 test('会社別のお客様URLを問診画面へ直接統一する',async()=>{
@@ -91,7 +84,7 @@ test('旧顧客案内URLは識別番号を保持して問診へ自動転送す�
   const redirect=await readFile(new URL('../customer.html',import.meta.url),'utf8');
   assert.match(redirect,/searchParams\.get\('t'\)/);
   assert.match(redirect,/location\.replace/);
-  assert.match(redirect,/trial\.html#customer-demo/);
+  assert.match(redirect,/trial\.html#features/);
   assert.doesNotMatch(redirect,/サンプル排煙窓サービス/);
 });
 

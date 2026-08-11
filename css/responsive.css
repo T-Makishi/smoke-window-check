@@ -22,7 +22,6 @@
   .site-header { padding-right: max(32px, calc((100vw - 1120px) / 2)); padding-left: max(32px, calc((100vw - 1120px) / 2)); }
   .license-banner__inner { padding-right: 32px; padding-left: 32px; }
   .screen:has(.hero-section) { display: grid; grid-template-columns: minmax(0, 1.12fr) minmax(340px, .88fr); grid-template-areas: "hero actions" "notice privacy"; align-items: start; gap: 24px 32px; }
-  .screen.demo-home:has(.hero-section) { grid-template-areas: "demo demo" "hero actions" "notice privacy"; }
   .screen:has(.hero-section) .hero-section { grid-area: hero; padding-top: 22px; }
   .screen:has(.hero-section) .notice-card { grid-area: notice; }
   .screen:has(.hero-section) .home-actions { grid-area: actions; margin-top: 0; }
@@ -63,8 +62,6 @@
   .customer-guide__contact { align-items: flex-start; }
   .customer-guide__contact a { font-size: 20px; }
   .customer-guide__qr canvas { width: 92px; height: 92px; }
-  .demo-banner { align-items: flex-start; flex-direction: column; }
-  .demo-step-note { align-items: flex-start; flex-direction: column; }
   .guide-phone-grid { grid-template-columns: 1fr; gap: 24px; }
   .guide-phone { width: 210px; }
   .guide-phone__screen { min-height: 270px; }
