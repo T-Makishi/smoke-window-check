@@ -67,6 +67,28 @@ test('顧客デモはサンプル入力済みで保存・送信しない',async(
   assert.match(html,/各画面はサンプル入力済みです/);
 });
 
+test('業者向けと見積依頼者向けを別ページに分けて相互移動できる',async()=>{
+  const business=await readFile(new URL('../trial.html',import.meta.url),'utf8');
+  const customer=await readFile(new URL('../customer.html',import.meta.url),'utf8');
+  const customerScript=await readFile(new URL('../js/customer-landing.js',import.meta.url),'utf8');
+  assert.match(business,/href="\/customer\.html">見積をご依頼の方/);
+  assert.match(business,/事前見積デモを体験する/);
+  assert.match(customer,/見積をご依頼の方向け/);
+  assert.match(customer,/href="\/trial\.html">業者・修理会社の方/);
+  assert.match(customerScript,/かんたん4ステップ/);
+  assert.match(customerScript,/操作ガイドを印刷・PDF保存/);
+  assert.match(customerScript,/buildTenantCustomerUrl/);
+});
+
+test('会社別のお客様案内URLを業者設定・運営管理・自動発行で統一する',async()=>{
+  const app=await readFile(new URL('../js/app.js',import.meta.url),'utf8');
+  const service=await readFile(new URL('../js/service-admin.js',import.meta.url),'utf8');
+  const issuance=await readFile(new URL('../functions/_lib/trial-issuance.js',import.meta.url),'utf8');
+  assert.match(app,/buildTenantGuideUrl/);
+  assert.match(service,/customer\.html\?t=/);
+  assert.match(issuance,/new URL\('\/customer\.html'/);
+});
+
 test('利用者削除は会社名確認と関連データ削除を要求する',async()=>{
   const tenantsApi=await readFile(new URL('../functions/api/service/tenants.js',import.meta.url),'utf8');
   const applicationsApi=await readFile(new URL('../functions/api/service/applications.js',import.meta.url),'utf8');

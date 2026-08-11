@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {DEFAULT_SETTINGS} from '../js/estimate-config.js';
-import {buildTenantCustomerUrl,mergePublicSettings,readTenantId,remainingTrialDays,vendorLoginUrl} from '../js/cloudflare-platform.js';
+import {buildTenantCustomerUrl,buildTenantGuideUrl,mergePublicSettings,readTenantId,remainingTrialDays,vendorLoginUrl} from '../js/cloudflare-platform.js';
 import {licenseState,productionWindow,trialWindow} from '../functions/_lib/trial.js';
 import {sanitizeSettings} from '../functions/_lib/settings.js';
 
@@ -10,6 +10,12 @@ test('短いお客様用URLを生成する',()=>{
   assert.equal(url,'https://smoke-window-check.pages.dev/?t=sw_abcdefghijklmnop');
   assert.equal(readTenantId(url),id);
   assert.equal(readTenantId('https://example.com/?t=invalid'),null);
+});
+
+test('会社別の見積依頼者向け案内URLを生成する',()=>{
+  const id='sw_abcdefghijklmnop',url=buildTenantGuideUrl(id,'https://smoke-window-check.pages.dev/path?cfg=long#top');
+  assert.equal(url,'https://smoke-window-check.pages.dev/customer.html?t=sw_abcdefghijklmnop');
+  assert.equal(readTenantId(url),id);
 });
 
 test('パスコード再設定のログインURLは再設定状態を保持する',()=>{

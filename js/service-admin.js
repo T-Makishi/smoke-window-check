@@ -129,7 +129,7 @@ function showDialog(title,body,saveLabel,onSave){document.querySelector('#modalR
 function closeDialog(){document.querySelector('#modalRoot').innerHTML=''}
 async function api(path,{method='GET',body}={}){let response;try{response=await fetch(path,{method,credentials:'same-origin',headers:body?{'content-type':'application/json'}:undefined,body:body?JSON.stringify(body):undefined})}catch{throw apiError('network_error','通信できません。時間をおいて再度お試しください。')}const type=response.headers.get('content-type')||'';if(!type.includes('application/json'))throw apiError('authentication_required','メール確認が必要です。');const data=await response.json();if(!response.ok||!data.ok)throw apiError(data.error?.code||'request_failed',data.error?.message||'処理できませんでした。');return data}
 function apiError(code,message){const error=new Error(message);error.code=code;return error}
-const customerUrl=id=>`${location.origin}/?t=${encodeURIComponent(id)}`;
+const customerUrl=id=>`${location.origin}/customer.html?t=${encodeURIComponent(id)}`;
 const stateLabel=state=>({active:'利用中',expired:'期限終了',suspended:'停止中',invalid:'要確認'}[state]||'未確認');
 const applicationStateLabel=state=>({pending:'メール確認待ち',issued:'発行済み',cancelled:'取消'}[state]||'要確認');
 const productionStateLabel=state=>({requested:'承認待ち',approved:'承認済み',declined:'見送り',cancelled:'取消'}[state]||'要確認');
