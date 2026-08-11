@@ -4,15 +4,15 @@ import {HttpError} from './http.js';
 const EMAIL_PATTERN=/^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export function authenticatedEmail(request){
-  const email=(request.headers.get('cf-access-authenticated-user-email')||'').trim().toLowerCase();
-  if(!EMAIL_PATTERN.test(email))throw new HttpError(401,'authentication_required','メール確認が必要です。');
-  return email;
+  const email=request.headers.get('cf-access-authenticated-user-email')||'';
+  try{return identityEmail(email)}
+  catch{throw new HttpError(401,'authentication_required','メール確認が必要です。')}
 }
 
 export async function requireServiceAdmin(request,env){
   const email=authenticatedEmail(request);
   const expected=await serviceAdminEmail(env);
-  if(email!==expected)throw new HttpError(403,'forbidden','サービス運営者として登録されていません。');
+  if(!emailsMatch(email,expected))throw new HttpError(403,'forbidden','サービス運営者として登録されていません。');
   return email;
 }
 
@@ -56,4 +56,16 @@ export function normalizeEmail(value){
   const email=String(value||'').trim().toLowerCase();
   if(!EMAIL_PATTERN.test(email))throw new HttpError(400,'invalid_email','有効なメールアドレスを入力してください。');
   return email;
+}
+
+// Gmail の +タグとドットは同一メールボックスを表す。
+// 他社メールでは同じ仕様を仮定せず、登録値をそのまま照合する。
+export function identityEmail(value){
+  const email=normalizeEmail(value),at=email.lastIndexOf('@'),local=email.slice(0,at),domain=email.slice(at+1);
+  if(domain!=='gmail.com'&&domain!=='googlemail.com')return email;
+  return `${local.split('+',1)[0].replaceAll('.','')}@gmail.com`;
+}
+
+export function emailsMatch(left,right){
+  try{return identityEmail(left)===identityEmail(right)}catch{return false}
 }
