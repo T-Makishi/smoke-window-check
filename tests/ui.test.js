@@ -10,6 +10,7 @@ test('顧客トップに開始・操作ガイド・印刷・電話の導線を�
   const html=renderHome(settings,false);
   assert.match(html,/テスト設備株式会社/);
   assert.match(html,/事前チェックを始める/);
+  assert.match(html,/現地調査前に必要な症状・設置状況・写真を整理/);
   assert.match(html,/操作方法を見る/);
   assert.match(html,/説明書を印刷・PDF保存/);
   assert.match(html,/tel:0312345678/);
@@ -75,14 +76,16 @@ test('業者向けLP内で保存・送信しない操作モックを提供する
   assert.match(app,/入力内容を保存・送信していません/);
 });
 
-test('業者向けLPは開発目的・三者関係・無料登録から顧客対応までを説明する',async()=>{
+test('業者向けLPは現地調査前の価値・三者関係・無料登録から事前確認までを説明する',async()=>{
   const business=await readFile(new URL('../trial.html',import.meta.url),'utf8');
-  assert.match(business,/遠方へ行く前に/);
-  assert.match(business,/受注の判断材料を/);
+  assert.match(business,/現地へ向かう前に/);
+  assert.match(business,/必要な情報をそろえる/);
+  assert.match(business,/現地調査前に、/);
+  assert.match(business,/判断材料を整える/);
   assert.match(business,/アプリ運営者/);
   assert.match(business,/排煙窓業者/);
   assert.match(business,/見積依頼者/);
-  assert.match(business,/無料登録から顧客対応まで/);
+  assert.match(business,/無料登録から現地調査前の確認まで/);
   assert.match(business,/6ステップ/);
   assert.match(business,/送信画面で写真・動画を添付/);
 });
@@ -111,7 +114,8 @@ test('会社別のお客様URLを問診画面へ直接統一する',async()=>{
 
 test('業者設定の先頭にお客様への案内手段をまとめて表示する',async()=>{
   const app=await readFile(new URL('../js/app.js',import.meta.url),'utf8');
-  assert.match(app,/お客様へ問診ページを案内する/);
+  assert.match(app,/お客様へ事前確認ページを案内する/);
+  assert.match(app,/現地調査前の事前確認のお願い/);
   assert.match(app,/LINE・SMSなどで直接送る/);
   assert.match(app,/メール用の案内文をコピー/);
   assert.match(app,/QRコード画像を作成・送信/);
