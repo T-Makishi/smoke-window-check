@@ -66,7 +66,9 @@ test('業者向けLP内で保存・送信しない操作モックを提供する
   assert.doesNotMatch(business,/href="\/\?demo=1"/);
   assert.match(business,/customer-demo-phone/);
   assert.match(business,/\?demo=1&amp;embed=1/);
-  assert.match(business,/業者も見積依頼者も/);
+  assert.match(business,/見るだけではありません。実際に操作できます/);
+  assert.match(business,/操作体験を始める/);
+  assert.match(business,/id="interactive-phone"/);
   assert.doesNotMatch(business,/href="\/customer\.html"/);
   assert.match(app,/demoSampleDraft/);
   assert.match(app,/if\(!platform\.demo\)/);
