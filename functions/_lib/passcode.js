@@ -44,16 +44,21 @@ export async function registerPasscode(env,{subject,email,passcode,request,cooki
 }
 
 export async function verifyRegisteredPasscode(env,{subject,email,passcode,cookieName}){
+  await confirmRegisteredPasscode(env,{subject,email,passcode});
+  return createSession(env,{subject,email,cookieName});
+}
+
+export async function confirmRegisteredPasscode(env,{subject,email,passcode}){
   const credential=await credentialFor(env,subject,email);
   if(!credential)throw new HttpError(409,'passcode_setup_required','最初にパスコードを登録してください。');
   enforceLock(credential);
   const candidate=await derivePasscodeHash(String(passcode||''),credential.passcode_salt,passcodePepper(env));
   if(!constantTimeEqual(candidate,credential.passcode_hash)){
     await recordFailure(env,credential);
-    throw new HttpError(401,'invalid_passcode','パスコードが違います。5回失敗すると15分間ロックされます。');
+    throw new HttpError(401,'invalid_passcode','現在のパスコードが違います。5回失敗すると15分間ロックされます。');
   }
   await clearFailures(env,subject,email);
-  return createSession(env,{subject,email,cookieName});
+  return true;
 }
 
 export async function resetRegisteredPasscode(env,{subject,email,passcode,request,cookieName}){

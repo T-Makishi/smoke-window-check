@@ -1,3 +1,4 @@
+import {database} from './db.js';
 import {HttpError} from './http.js';
 
 const EMAIL_PATTERN=/^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -8,11 +9,41 @@ export function authenticatedEmail(request){
   return email;
 }
 
-export function requireServiceAdmin(request,env){
+export async function requireServiceAdmin(request,env){
   const email=authenticatedEmail(request);
-  const expected=String(env.SERVICE_ADMIN_EMAIL||'makishi0520@gmail.com').trim().toLowerCase();
+  const expected=await serviceAdminEmail(env);
   if(email!==expected)throw new HttpError(403,'forbidden','サービス運営者として登録されていません。');
   return email;
+}
+
+export async function serviceAdminEmail(env){
+  const fallback=normalizeEmail(env.SERVICE_ADMIN_EMAIL||'makishi0520@gmail.com');
+  try{
+    const row=await database(env).prepare("SELECT value FROM service_settings WHERE key='service_admin_email'").first();
+    return row?.value?normalizeEmail(row.value):fallback;
+  }catch(error){
+    if(String(error?.message||error).toLowerCase().includes('no such table'))return fallback;
+    throw error;
+  }
+}
+
+export async function ensureServiceSettings(env){
+  await database(env).prepare(`CREATE TABLE IF NOT EXISTS service_settings (
+    key TEXT PRIMARY KEY,
+    value TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    updated_by TEXT NOT NULL
+  )`).run();
+  await database(env).prepare(`CREATE TABLE IF NOT EXISTS service_email_changes (
+    id TEXT PRIMARY KEY,
+    current_email TEXT NOT NULL COLLATE NOCASE,
+    new_email TEXT NOT NULL COLLATE NOCASE,
+    code_hash TEXT NOT NULL,
+    expires_at TEXT NOT NULL,
+    status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending','confirmed','expired','cancelled')),
+    created_at TEXT NOT NULL,
+    confirmed_at TEXT
+  )`).run();
 }
 
 export function tenantIdFrom(value){

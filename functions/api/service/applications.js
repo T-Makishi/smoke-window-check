@@ -1,13 +1,14 @@
 import {requireServiceAdmin,tenantIdFrom} from '../../_lib/auth.js';
 import {database,findTenant} from '../../_lib/db.js';
-import {sendProductionApprovedEmail} from '../../_lib/email.js';
+import {sendProductionApprovedEmail,sendVerificationEmail} from '../../_lib/email.js';
 import {handleError,HttpError,json,readJson} from '../../_lib/http.js';
-import {publicApplication,publicProductionRequest} from '../../_lib/onboarding.js';
+import {publicApplication,publicProductionRequest,randomToken,sha256,verificationExpiry} from '../../_lib/onboarding.js';
 import {requirePasscodeSession,SERVICE_PASSCODE_COOKIE,servicePasscodeSubject} from '../../_lib/passcode.js';
 import {productionWindow} from '../../_lib/trial.js';
+import {issueTrialApplication} from '../../_lib/trial-issuance.js';
 
 async function authorizedService(request,env){
-  const email=requireServiceAdmin(request,env);await requirePasscodeSession(request,env,{subject:servicePasscodeSubject(),email,cookieName:SERVICE_PASSCODE_COOKIE});return email;
+  const email=await requireServiceAdmin(request,env);await requirePasscodeSession(request,env,{subject:servicePasscodeSubject(),email,cookieName:SERVICE_PASSCODE_COOKIE});return email;
 }
 
 export async function onRequestGet({request,env}){
@@ -23,8 +24,17 @@ export async function onRequestGet({request,env}){
 
 export async function onRequestPatch({request,env}){
   try{
-    await authorizedService(request,env);const body=await readJson(request),tenantId=tenantIdFrom(body.tenantId),action=String(body.action||''),db=database(env),tenant=await findTenant(env,tenantId);
-    if(!tenant)throw new HttpError(404,'not_found','登録が見つかりません。');
+    await authorizedService(request,env);const body=await readJson(request),action=String(body.action||''),db=database(env);
+    if(action==='approve-trial'||action==='resend-verification'){
+      const applicationId=applicationIdFrom(body.applicationId),application=await db.prepare('SELECT * FROM trial_applications WHERE id=?1').bind(applicationId).first();if(!application)throw new HttpError(404,'not_found','無料体験の申込が見つかりません。');
+      if(action==='approve-trial'){const result=await issueTrialApplication(request,env,application,{manual:true});const updated=await db.prepare('SELECT * FROM trial_applications WHERE id=?1').bind(applicationId).first();return json({ok:true,application:publicApplication(updated),...result})}
+      if(application.status!=='pending')throw new HttpError(409,'application_not_pending','発行済みまたは取消済みの申込には確認メールを再送できません。');
+      const token=randomToken(),tokenHash=await sha256(token),now=new Date(),verificationUrl=new URL('/trial.html',request.url);verificationUrl.searchParams.set('verify',token);
+      await db.prepare('UPDATE trial_applications SET token_hash=?1,token_expires_at=?2,updated_at=?3 WHERE id=?4').bind(tokenHash,verificationExpiry(now),now.toISOString(),applicationId).run();
+      await sendVerificationEmail(env,{applicationId,companyName:application.company_name,contactName:application.contact_name,email:application.email,verificationUrl:verificationUrl.toString(),tokenHash});
+      return json({ok:true,message:'確認メールを再送しました。'});
+    }
+    const tenantId=tenantIdFrom(body.tenantId),tenant=await findTenant(env,tenantId);if(!tenant)throw new HttpError(404,'not_found','登録が見つかりません。');
     if(action==='approve-production'){
       const requestRow=await db.prepare('SELECT * FROM production_requests WHERE tenant_id=?1').bind(tenantId).first();
       if(!requestRow||requestRow.status!=='requested')throw new HttpError(409,'request_not_pending','承認待ちの本番利用申込がありません。');
@@ -42,3 +52,5 @@ export async function onRequestPatch({request,env}){
     return json({ok:true,request:publicProductionRequest(updated)});
   }catch(error){return handleError(error)}
 }
+
+function applicationIdFrom(value){const id=String(value||'').trim();if(!/^app_[A-Za-z0-9_-]{12,32}$/.test(id))throw new HttpError(400,'invalid_application','申込情報が正しくありません。');return id}

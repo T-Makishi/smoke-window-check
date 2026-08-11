@@ -6,7 +6,7 @@ async function submitApplication(event){
   event.preventDefault();const button=form.querySelector('button[type="submit"]'),error=document.querySelector('#trialError');error.hidden=true;
   if(!form.reportValidity())return;
   const data=Object.fromEntries(new FormData(form));data.consent=data.consent==='true';button.disabled=true;button.textContent='送信しています…';
-  try{const result=await api('/api/trial/apply',{body:data});main.innerHTML=resultScreen('無料体験の仮申込を受け付けました',`<p>${escapeHtml(result.message)}</p><p>確認完了後、運営者へ正式申込として通知され、会社専用URLが自動発行されます。</p><p>メールが届かない場合は、迷惑メールフォルダを確認してから、この画面でもう一度お申し込みください。</p><a class="button secondary" href="/trial.html">申込画面へ戻る</a>`);scrollTo({top:0});}
+  try{const result=await api('/api/trial/apply',{body:data}),followup=result.verificationSent?'<p>確認完了後、運営者へ正式申込として通知され、会社専用URLが自動発行されます。</p><p>メールが届かない場合は、迷惑メールフォルダをご確認ください。</p>':'<p>運営者が申込内容を確認後、業者設定URLとお客様用URLをご案内します。</p>';main.innerHTML=resultScreen('無料体験のお申し込みを受け付けました',`<p>${escapeHtml(result.message)}</p>${followup}<a class="button secondary" href="/trial.html">申込画面へ戻る</a>`);scrollTo({top:0});}
   catch(caught){error.textContent=caught.message;error.hidden=false;error.focus?.();}
   finally{button.disabled=false;button.textContent='7日間無料体験を申し込む'}
 }

@@ -2,16 +2,16 @@ import {requireServiceAdmin} from '../../_lib/auth.js';
 import {handleError,HttpError,json,readJson} from '../../_lib/http.js';
 import {changeRegisteredPasscode,destroyPasscodeSession,passcodeStatus,registerPasscode,resetRegisteredPasscode,verifyRegisteredPasscode,SERVICE_PASSCODE_COOKIE,servicePasscodeSubject} from '../../_lib/passcode.js';
 
-function scope(request,env){const email=requireServiceAdmin(request,env);return {email,subject:servicePasscodeSubject()}}
+async function scope(request,env){const email=await requireServiceAdmin(request,env);return {email,subject:servicePasscodeSubject()}}
 
 export async function onRequestGet({request,env}){
-  try{const context=scope(request,env);return json({ok:true,user:{email:context.email},passcode:await passcodeStatus(env,{...context,request,cookieName:SERVICE_PASSCODE_COOKIE})})}
+  try{const context=await scope(request,env);return json({ok:true,user:{email:context.email},passcode:await passcodeStatus(env,{...context,request,cookieName:SERVICE_PASSCODE_COOKIE})})}
   catch(error){return handleError(error)}
 }
 
 export async function onRequestPost({request,env}){
   try{
-    const context=scope(request,env),body=await readJson(request,4096),options={...context,request,cookieName:SERVICE_PASSCODE_COOKIE};
+    const context=await scope(request,env),body=await readJson(request,4096),options={...context,request,cookieName:SERVICE_PASSCODE_COOKIE};
     let cookie;
     if(body.action==='register')cookie=await registerPasscode(env,{...options,passcode:body.passcode});
     else if(body.action==='verify')cookie=await verifyRegisteredPasscode(env,{...options,passcode:body.passcode});
@@ -23,6 +23,6 @@ export async function onRequestPost({request,env}){
 }
 
 export async function onRequestDelete({request,env}){
-  try{scope(request,env);return json({ok:true},{headers:{'set-cookie':await destroyPasscodeSession(request,env,{cookieName:SERVICE_PASSCODE_COOKIE})}})}
+  try{await scope(request,env);return json({ok:true},{headers:{'set-cookie':await destroyPasscodeSession(request,env,{cookieName:SERVICE_PASSCODE_COOKIE})}})}
   catch(error){return handleError(error)}
 }

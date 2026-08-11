@@ -7,7 +7,7 @@ import {DEFAULT_SETTINGS} from '../../../js/estimate-config.js';
 import {requirePasscodeSession,SERVICE_PASSCODE_COOKIE,servicePasscodeSubject,vendorPasscodeSubject} from '../../_lib/passcode.js';
 
 async function authorizedService(request,env){
-  const email=requireServiceAdmin(request,env);
+  const email=await requireServiceAdmin(request,env);
   await requirePasscodeSession(request,env,{subject:servicePasscodeSubject(),email,cookieName:SERVICE_PASSCODE_COOKIE});
   return email;
 }

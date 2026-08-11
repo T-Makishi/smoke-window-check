@@ -14,7 +14,7 @@ async function initialize(){
 async function loadTenants(){const [data,onboarding]=await Promise.all([api('/api/service/tenants'),api('/api/service/applications')]);tenants=data.tenants;applications=onboarding.applications;productionRequests=onboarding.productionRequests;serviceEmail=data.user.email;render()}
 
 function render(){
-  main.innerHTML=`<section class="screen"><div class="screen-header"><p class="eyebrow">サービス運営者専用</p><h1>利用契約の管理</h1><p class="screen-intro">試験利用または期限のない本番利用として業者を登録します。</p></div><div class="card stack"><h2>ログインとパスコード</h2><p class="hint">ログイン中：${escapeHtml(serviceEmail)}</p><p class="hint">メール確認と登録者専用パスコードで保護されています。ログイン状態は24時間有効です。</p><div class="tool-row"><button class="button secondary" data-action="change-passcode" type="button">パスコードを変更</button><button class="button ghost" data-action="logout" type="button">ログアウト</button></div></div><form id="tenantForm" class="card stack"><h2>新しい業者を登録</h2><div class="field"><label for="companyName">会社名</label><input id="companyName" name="companyName" required maxlength="200"></div><div class="field"><label for="vendorEmail">業者ログイン用メール</label><input id="vendorEmail" name="vendorEmail" type="email" required></div><div class="field"><label for="licensePlan">利用区分</label><select id="licensePlan" name="licensePlan"><option value="trial:7">試験利用・7日</option><option value="trial:14">試験利用・14日</option><option value="trial:30" selected>試験利用・30日</option><option value="production">本番利用・期限なし</option></select></div><button class="button" type="submit">業者を登録してURLを発行</button></form><div class="section stack" id="tenantList">${tenantCards()}</div></section>`;
+  main.innerHTML=`<section class="screen"><div class="screen-header"><p class="eyebrow">サービス運営者専用</p><h1>利用契約の管理</h1><p class="screen-intro">試験利用または期限のない本番利用として業者を登録します。</p></div><div class="card stack"><h2>ログインと運営者メール</h2><p class="hint">ログインID・申込通知先：${escapeHtml(serviceEmail)}</p><p class="hint">ログインIDと無料体験申込の通知先を同じメールアドレスで管理します。変更時は現在のパスコードと新しいメールの確認コードが必要です。</p><div class="tool-row"><button class="button secondary" data-action="change-passcode" type="button">パスコードを変更</button><button class="button secondary" data-action="change-service-email" type="button">運営者メールを変更</button><button class="button ghost" data-action="logout" type="button">ログアウト</button></div></div><form id="tenantForm" class="card stack"><h2>新しい業者を登録</h2><div class="field"><label for="companyName">会社名</label><input id="companyName" name="companyName" required maxlength="200"></div><div class="field"><label for="vendorEmail">業者ログイン用メール</label><input id="vendorEmail" name="vendorEmail" type="email" required></div><div class="field"><label for="licensePlan">利用区分</label><select id="licensePlan" name="licensePlan"><option value="trial:7">試験利用・7日</option><option value="trial:14">試験利用・14日</option><option value="trial:30" selected>試験利用・30日</option><option value="production">本番利用・期限なし</option></select></div><button class="button" type="submit">業者を登録してURLを発行</button></form><div class="section stack" id="tenantList">${tenantCards()}</div></section>`;
   document.querySelector('#tenantForm').addEventListener('submit',createTenant);
   document.querySelector('#tenantList').addEventListener('click',tenantAction);
   renderOnboardingSections();
@@ -28,7 +28,7 @@ function renderOnboardingSections(){
 
 function applicationRows(){
   if(!applications.length)return '<p class="hint">Webからの申込はまだありません。</p>';
-  return `<div class="admin-table">${applications.map(item=>`<article class="admin-table__row"><div><strong>${escapeHtml(item.companyName)}</strong><p>${escapeHtml(item.contactName)}・${escapeHtml(item.email)}・${escapeHtml(item.phone)}</p></div><div><span class="status">${applicationStateLabel(item.status)}</span><p class="hint">${formatDate(item.createdAt)}</p>${item.tenantId?`<code>${escapeHtml(item.tenantId)}</code>`:''}</div></article>`).join('')}</div>`;
+  return `<div class="admin-table">${applications.map(item=>`<article class="admin-table__row"><div><strong>${escapeHtml(item.companyName)}</strong><p>${escapeHtml(item.contactName)}・${escapeHtml(item.email)}・${escapeHtml(item.phone)}</p></div><div><span class="status">${applicationStateLabel(item.status)}</span><p class="hint">${formatDate(item.createdAt)}</p>${item.tenantId?`<code>${escapeHtml(item.tenantId)}</code>`:''}${item.status==='pending'?`<div class="tool-row"><button class="button small" data-onboarding-action="resend-verification" data-id="${item.id}">確認メールを再送</button><button class="button secondary small" data-onboarding-action="approve-trial" data-id="${item.id}">手動承認・URL発行</button></div>`:''}</div></article>`).join('')}</div>`;
 }
 
 function productionRequestRows(){
@@ -37,10 +37,18 @@ function productionRequestRows(){
 }
 
 async function onboardingAction(event){
-  const button=event.target.closest('[data-onboarding-action]');if(!button)return;const action=button.dataset.onboardingAction,request=productionRequests.find(item=>item.tenantId===button.dataset.id);if(!request)return;
+  const button=event.target.closest('[data-onboarding-action]');if(!button)return;const action=button.dataset.onboardingAction;
+  if(action==='approve-trial'||action==='resend-verification'){
+    const application=applications.find(item=>item.id===button.dataset.id);if(!application)return;
+    if(action==='approve-trial'&&!confirm(`${application.companyName}をメール確認前に手動承認し、7日間の専用URLを発行しますか？`))return;
+    button.disabled=true;try{const result=await api('/api/service/applications',{method:'PATCH',body:{applicationId:application.id,action}});if(action==='approve-trial')showIssuedTrial(result);await loadTenants();toast(action==='resend-verification'?'確認メールを再送しました。':result.emailSent?'承認し、案内メールを送信しました。':'承認しました。案内メールは未送信のためURLを直接ご案内ください。')}catch(error){toast(error.message)}finally{button.disabled=false}return;
+  }
+  const request=productionRequests.find(item=>item.tenantId===button.dataset.id);if(!request)return;
   const confirmText=action==='approve-production'?`${request.companyName}を期限なしの本番利用へ切り替えますか？`:`${request.companyName}の本番利用申込を見送りますか？`;if(!confirm(confirmText))return;
   button.disabled=true;try{await api('/api/service/applications',{method:'PATCH',body:{tenantId:request.tenantId,action}});await loadTenants();toast(action==='approve-production'?'本番利用へ切り替えました。':'申込状態を更新しました。')}catch(error){toast(error.message)}finally{button.disabled=false}
 }
+
+function showIssuedTrial(result){showDialog('無料体験URLを発行しました',`<p>${result.emailSent?'申込者へ案内メールを送信しました。':'案内メールを送信できませんでした。以下のURLをコピーして申込者へお送りください。'}</p><div class="url-panel"><strong>業者設定URL</strong><code>${escapeHtml(result.adminUrl)}</code><button class="button secondary small" id="copyIssuedAdmin" type="button">コピー</button></div><div class="url-panel"><strong>お客様用URL</strong><code>${escapeHtml(result.customerUrl)}</code><button class="button secondary small" id="copyIssuedCustomer" type="button">コピー</button></div>`,'閉じる',closeDialog);document.querySelector('#copyIssuedAdmin').onclick=()=>copyText(result.adminUrl).then(()=>toast('業者設定URLをコピーしました。'));document.querySelector('#copyIssuedCustomer').onclick=()=>copyText(result.customerUrl).then(()=>toast('お客様用URLをコピーしました。'))}
 
 function renderPasscodeGate(){
   const resetRequested=new URL(location.href).searchParams.get('resetPasscode')==='1',mode=resetRequested?'reset':passcodeState?.configured?'verify':'register';
@@ -62,8 +70,15 @@ async function authAction(event){
   const action=event.target.closest('[data-action]')?.dataset.action;if(!action)return;
   if(action==='reset-help')showResetHelp();
   if(action==='change-passcode')showChangePasscode();
+  if(action==='change-service-email')showServiceEmailChange();
   if(action==='logout')await logout();
 }
+
+function showServiceEmailChange(){showDialog('運営者メールを変更',`<p>ログインIDと無料体験申込の通知先を同時に変更します。</p><div class="field"><label for="newServiceEmail">新しいメールアドレス</label><input id="newServiceEmail" type="email" autocomplete="email" required></div><div class="field"><label for="serviceEmailPasscode">現在のパスコード</label><input id="serviceEmailPasscode" type="password" inputmode="numeric" maxlength="8" autocomplete="current-password" required></div><p class="hint">新しいメールへ6桁の確認コードを送信します。確認完了後、次回から新しいメールでログインします。</p><p class="error" id="dialogError" hidden></p>`,'確認コードを送信',requestServiceEmailChange)}
+
+async function requestServiceEmailChange(){const email=document.querySelector('#newServiceEmail'),passcode=document.querySelector('#serviceEmailPasscode'),error=document.querySelector('#dialogError'),button=document.querySelector('#dialogSave');if(!email.value.trim()||!passcode.value.trim()){showError(error,'新しいメールアドレスと現在のパスコードを入力してください。');return}button.disabled=true;try{const result=await api('/api/service/email',{method:'POST',body:{action:'request',newEmail:email.value.trim(),currentPasscode:passcode.value.trim()}});document.querySelector('.modal>div').innerHTML=`<p><strong>${escapeHtml(result.newEmail)}</strong>へ確認コードを送信しました。</p><div class="field"><label for="serviceEmailCode">6桁の確認コード</label><input id="serviceEmailCode" inputmode="numeric" maxlength="6" autocomplete="one-time-code"></div><p class="error" id="dialogError" hidden></p>`;button.textContent='変更を確定';button.disabled=false;button.onclick=()=>confirmServiceEmailChange(result.requestId)}catch(caught){showError(error,caught.message);button.disabled=false}}
+
+async function confirmServiceEmailChange(requestId){const code=document.querySelector('#serviceEmailCode'),error=document.querySelector('#dialogError'),button=document.querySelector('#dialogSave');if(!/^\d{6}$/.test(code.value.trim())){showError(error,'6桁の確認コードを入力してください。');return}button.disabled=true;try{const result=await api('/api/service/email',{method:'POST',body:{action:'confirm',requestId,code:code.value.trim()}});document.querySelector('.modal').innerHTML=`<h2>運営者メールを変更しました</h2><p>${escapeHtml(result.email)}を、次回からのログインIDと申込通知先に使用します。</p><p>安全のため現在のログインを終了します。</p><p><a class="button" href="/cdn-cgi/access/logout">ログアウトして新しいメールで確認</a></p>`}catch(caught){showError(error,caught.message);button.disabled=false}}
 
 function showResetHelp(){showDialog('パスコードを再設定',`<ol><li>下のボタンで再設定用URLをコピーしてログアウトします。</li><li>コピーしたURLを開きます。</li><li>登録メールアドレスを入力し、新しい確認コードで認証します。</li><li>新しいパスコードを登録します。</li></ol><p class="hint">確認コードが届かない場合は、認証画面から再送してください。</p>`,'URLをコピーしてログアウト',async()=>{const url=new URL('/service.html',location.origin);url.searchParams.set('resetPasscode','1');try{await copyText(url.toString());await api('/api/service/passcode',{method:'DELETE'});location.href='/cdn-cgi/access/logout'}catch{toast('再設定用URLをコピーできませんでした。')}})}
 

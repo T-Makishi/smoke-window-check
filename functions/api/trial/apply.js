@@ -20,8 +20,11 @@ export async function onRequestPost({request,env}){
       await db.prepare("INSERT INTO trial_applications (id,company_name,contact_name,email,phone,prefecture,website,status,token_hash,token_expires_at,request_fingerprint,consent_version,consent_at,created_at,updated_at) VALUES (?1,?2,?3,?4,?5,?6,?7,'pending',?8,?9,?10,?11,?12,?12,?12)").bind(applicationId,input.companyName,input.contactName,email,input.phone,input.prefecture,input.website,tokenHash,verificationExpiry(now),fingerprint,TRIAL_CONSENT_VERSION,nowIso).run();
     }
     const verificationUrl=new URL('/trial.html',request.url);verificationUrl.searchParams.set('verify',token);
-    await sendVerificationEmail(env,{applicationId,companyName:input.companyName,contactName:input.contactName,email,verificationUrl:verificationUrl.toString(),tokenHash});
-    return json({ok:true,message:'入力したメールアドレスへ本人確認リンクを送信しました。30分以内に確認を完了してください。'},{status:201});
+    let verificationSent=true;
+    try{await sendVerificationEmail(env,{applicationId,companyName:input.companyName,contactName:input.contactName,email,verificationUrl:verificationUrl.toString(),tokenHash})}
+    catch(error){console.error('trial_verification_email_failed',applicationId,error);verificationSent=false}
+    const message=verificationSent?'入力したメールアドレスへ本人確認リンクを送信しました。30分以内に確認を完了してください。':'無料体験のお申し込みを受け付けました。体験開始までお待ちください。運営者から案内メールをお送りします。';
+    return json({ok:true,verificationSent,message},{status:verificationSent?201:202});
   }catch(error){return handleError(error)}
 }
 

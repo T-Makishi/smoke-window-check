@@ -72,7 +72,13 @@ python3 -m http.server 4173
 
 業者募集用の公開ページは `https://smoke-window-check.pages.dev/trial.html` です。申込者がメール確認を完了すると、7日間有効な業者識別番号、業者設定URL、お客様用URLを自動発行します。既存の運営者画面からの手動登録も継続して利用できます。
 
-本機能を有効化する前に、D1へ `migrations/0002_trial_onboarding.sql` を適用します。次にBrevoで送信者を確認し、Cloudflare Pagesへ `BREVO_API_KEY`、`EMAIL_SENDER_ADDRESS`、`EMAIL_SENDER_NAME` を登録します。APIキーはGitHubやブラウザ側のJavaScriptへ保存しません。
+申込メールを送信できない場合でも申込情報は保存され、申込者には運営者からの案内を待つ画面を表示します。運営管理画面では確認メールの再送、または本人確認前の手動承認とURL発行ができます。手動承認はメール障害時の予備手段です。
+
+運営管理画面の「運営者メールを変更」では、ログインIDと無料体験申込の通知先を同時に変更できます。現在のパスコードと、新しいメールアドレスへ届く6桁の確認コードが必要です。登録業者や発行済みURLは引き継がれ、再登録は不要です。Cloudflare Accessを特定メールだけの許可リストにしている場合は、変更前に新しいメールもAccessポリシーへ追加してください。メール送信元の `EMAIL_SENDER_ADDRESS` は通知先とは別の設定です。
+
+ランディングページには、保存・送信を行わない顧客画面デモを埋め込んでいます。顧客画面の「操作方法を見る」ではスマートフォン図解を表示し、そのまま印刷またはPDF保存できます。
+
+本機能を有効化する前に、D1へ `migrations/0002_trial_onboarding.sql` と `migrations/0003_service_admin_email.sql` を順番に適用します。次にBrevoで送信者を確認し、Cloudflare Pagesへ `BREVO_API_KEY`、`EMAIL_SENDER_ADDRESS`、`EMAIL_SENDER_NAME` を登録します。APIキーはGitHubやブラウザ側のJavaScriptへ保存しません。
 
 期限案内はGitHub Actionsの `.github/workflows/trial-reminders.yml` が毎日実行します。同じ32文字以上の値をCloudflareの `JOB_SECRET` とGitHub Actionsの `TRIAL_REMINDER_JOB_SECRET` に登録します。案内は試験終了3日前と1日前に1回ずつ送信され、D1の送信履歴で二重送信を防止します。
 

@@ -1,4 +1,5 @@
 import {database} from './db.js';
+import {serviceAdminEmail} from './auth.js';
 import {HttpError} from './http.js';
 
 const BREVO_ENDPOINT='https://api.brevo.com/v3/smtp/email';
@@ -33,7 +34,7 @@ export async function sendTrialIssuedEmail(env,{applicationId,tenantId,companyNa
 }
 
 export async function sendOperatorApplicationNotice(env,{applicationId,tenantId,companyName,contactName,email,phone,serviceUrl}){
-  const operator=String(env.SERVICE_ADMIN_EMAIL||'').trim();if(!operator)return {sent:false};
+  const operator=await serviceAdminEmail(env);if(!operator)return {sent:false};
   const subject=`【新規無料体験】${companyName}`;
   const text=`無料体験が開始されました。\n会社名：${companyName}\n担当者：${contactName}\nメール：${email}\n電話：${phone}\n業者識別番号：${tenantId}\n\n${serviceUrl}`;
   return deliverEmail(env,{eventKey:`operator-application:${applicationId}`,eventType:'operator_application',to:operator,subject,textContent:text,htmlContent:`<h2>無料体験が開始されました</h2><p>会社名：${escapeHtml(companyName)}<br>担当者：${escapeHtml(contactName)}<br>メール：${escapeHtml(email)}<br>電話：${escapeHtml(phone)}<br>業者識別番号：${escapeHtml(tenantId)}</p><p><a href="${escapeHtml(serviceUrl)}">運営管理画面を開く</a></p>`,tenantId,applicationId});
@@ -46,12 +47,25 @@ export async function sendExpiryReminder(env,{tenantId,companyName,email,days,ex
 }
 
 export async function sendProductionRequestNotice(env,{tenantId,companyName,applicantName,email,note,serviceUrl,requestedAt}){
-  const operator=String(env.SERVICE_ADMIN_EMAIL||'').trim();if(!operator)return {sent:false};
+  const operator=await serviceAdminEmail(env);if(!operator)return {sent:false};
   return deliverEmail(env,{eventKey:`production-request:${tenantId}:${requestedAt}`,eventType:'production_request',to:operator,subject:`【本番利用申込】${companyName}`,textContent:`本番利用の相談申込が届きました。\n会社名：${companyName}\n担当者：${applicantName}\n登録メール：${email}\n連絡事項：${note||'なし'}\n\n${serviceUrl}`,htmlContent:`<h2>本番利用の相談申込</h2><p>会社名：${escapeHtml(companyName)}<br>担当者：${escapeHtml(applicantName)}<br>登録メール：${escapeHtml(email)}</p><p>連絡事項：${escapeHtml(note||'なし')}</p><p><a href="${escapeHtml(serviceUrl)}">運営管理画面を開く</a></p>`,tenantId});
 }
 
 export async function sendProductionApprovedEmail(env,{tenantId,companyName,email,adminUrl}){
   return deliverEmail(env,{eventKey:`production-approved:${tenantId}`,eventType:'production_approved',to:email,subject:'【排煙窓事前チェック】本番利用へ切り替わりました',textContent:`${companyName} ご担当者様\n\n排煙窓事前チェックを期限のない本番利用へ切り替えました。\nこれまでのお客様用URLと設定をそのまま継続して使用できます。\n\n業者設定：${adminUrl}`,htmlContent:`<p>${escapeHtml(companyName)} ご担当者様</p><p>排煙窓事前チェックを<strong>本番利用</strong>へ切り替えました。</p><p>これまでのお客様用URLと設定をそのまま継続して使用できます。</p><p><a href="${escapeHtml(adminUrl)}">業者設定を開く</a></p>`,tenantId});
+}
+
+export async function sendServiceEmailChangeCode(env,{requestId,currentEmail,newEmail,code}){
+  const subject='【排煙窓事前チェック】運営者メール変更の確認コード';
+  const text=`運営者メールアドレスを変更します。\n\n新しいメール：${newEmail}\n確認コード：${code}\n\nこのコードは10分間有効です。心当たりがない場合は操作を中止してください。`;
+  const html=`<h2>運営者メールアドレスの変更</h2><p>次の確認コードを管理画面へ入力してください。</p><p style="font-size:32px;font-weight:800;letter-spacing:.18em">${escapeHtml(code)}</p><p>新しいメール：${escapeHtml(newEmail)}<br>有効時間：10分</p><p style="color:#65736c">心当たりがない場合は操作を中止してください。</p>`;
+  return deliverEmail(env,{eventKey:`service-email-change:${requestId}`,eventType:'service_email_change',to:newEmail,subject,textContent:text,htmlContent:html});
+}
+
+export async function sendServiceEmailChangedNotice(env,{currentEmail,newEmail}){
+  const subject='【排煙窓事前チェック】運営者メールを変更しました',text=`サービス運営者のログインIDと申込通知先を変更しました。\n\n変更前：${currentEmail}\n変更後：${newEmail}\n\n次回から新しいメールアドレスでログインしてください。`;
+  const deliveries=[currentEmail,newEmail].map((recipient,index)=>deliverEmail(env,{eventKey:`service-email-changed:${newEmail}:${index}`,eventType:'service_email_changed',to:recipient,subject,textContent:text,htmlContent:`<h2>運営者メールを変更しました</h2><p>変更前：${escapeHtml(currentEmail)}<br>変更後：${escapeHtml(newEmail)}</p><p>次回から新しいメールアドレスでログインしてください。</p>`}));
+  return Promise.allSettled(deliveries);
 }
 
 async function recordEmail(env,{eventKey,eventType,to,tenantId,applicationId,status,messageId=null,errorMessage=null}){
