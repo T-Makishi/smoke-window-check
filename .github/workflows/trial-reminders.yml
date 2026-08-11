@@ -1,0 +1,24 @@
+name: Trial expiry reminders
+
+on:
+  schedule:
+    - cron: '15 0 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Send due reminders
+        env:
+          JOB_SECRET: ${{ secrets.TRIAL_REMINDER_JOB_SECRET }}
+        run: |
+          test -n "$JOB_SECRET"
+          curl --fail-with-body --silent --show-error \
+            --request POST \
+            --header "Authorization: Bearer $JOB_SECRET" \
+            https://smoke-window-check.pages.dev/api/jobs/reminders

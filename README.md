@@ -21,6 +21,9 @@ UIはデザインA「信頼感・安心感のあるベーシックデザイン�
 - 期限終了・利用停止時の公開画面制御
 - メール確認コードで保護した業者設定
 - サービス運営者用の業者登録・期限管理画面
+- Webからの7日間無料体験申込、メール確認、業者ID・専用URLの自動発行
+- 無料体験申込者一覧、本番利用申込、運営者承認
+- 試験終了3日前・1日前の自動案内メール
 
 ## ファイル構成
 
@@ -45,6 +48,10 @@ python3 -m http.server 4173
 - D1 binding: `APP_DB`
 - サービス運営者メール変数: `SERVICE_ADMIN_EMAIL`
 - パスコード用シークレット: `PASSCODE_PEPPER`（32文字以上のランダム値、暗号化して保存）
+- メール送信APIキー: `BREVO_API_KEY`（暗号化して保存）
+- 送信者メール: `EMAIL_SENDER_ADDRESS`（Brevoで確認済みの送信者）
+- 送信者名: `EMAIL_SENDER_NAME`
+- 期限案内ジョブ認証: `JOB_SECRET`（32文字以上のランダム値、暗号化して保存）
 
 `main` へのpush後、Cloudflare Pagesが自動でデプロイします。GitHub PagesはCloudflare版の期限確認と認証を検証した後に停止します。
 
@@ -60,6 +67,16 @@ python3 -m http.server 4173
 8. `smoke-window-check.pages.dev/api/vendor/*` と `smoke-window-check.pages.dev/api/service/*` をAccessで保護し、セッション時間を24時間にする。
 9. Access通過後もAPI側で認証メールを照合するため、業者はD1に登録したメール、サービス運営者は `SERVICE_ADMIN_EMAIL` だけが操作できる。
 10. Pages Functionsの無料枠到達時の動作をFail closedにする。
+
+## 7日間無料体験の自動発行
+
+業者募集用の公開ページは `https://smoke-window-check.pages.dev/trial.html` です。申込者がメール確認を完了すると、7日間有効な業者識別番号、業者設定URL、お客様用URLを自動発行します。既存の運営者画面からの手動登録も継続して利用できます。
+
+本機能を有効化する前に、D1へ `migrations/0002_trial_onboarding.sql` を適用します。次にBrevoで送信者を確認し、Cloudflare Pagesへ `BREVO_API_KEY`、`EMAIL_SENDER_ADDRESS`、`EMAIL_SENDER_NAME` を登録します。APIキーはGitHubやブラウザ側のJavaScriptへ保存しません。
+
+期限案内はGitHub Actionsの `.github/workflows/trial-reminders.yml` が毎日実行します。同じ32文字以上の値をCloudflareの `JOB_SECRET` とGitHub Actionsの `TRIAL_REMINDER_JOB_SECRET` に登録します。案内は試験終了3日前と1日前に1回ずつ送信され、D1の送信履歴で二重送信を防止します。
+
+本番利用は業者設定画面から相談申込を行い、運営者画面で承認します。申込送信だけでは課金または契約成立になりません。料金・契約条件を別途確認した後、運営者が本番利用へ切り替えます。
 
 設定後は `https://smoke-window-check.pages.dev/service.html` を開き、業者名、業者ログイン用メール、7日・14日・30日の期間を入力して登録します。発行された `?t=...` のURLをお客様へ案内します。
 

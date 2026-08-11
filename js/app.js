@@ -9,7 +9,7 @@ import {settingsFromForm,resetSettings} from './settings.js';
 import {customerFields,renderDetail,renderHistory,renderHome,renderSettings,renderStep} from './ui.js';
 import {hashPasscode,verifyPasscode} from './security.js';
 import {applyCustomerConfigFromUrl,buildCustomerUrl} from './recipient-link.js';
-import {buildTenantCustomerUrl,clearVendorPasscodeSession,isTenantUrl,loadPublicTenant,loadVendorPasscodeState,loadVendorTenant,mergePublicSettings,readTenantId,remainingTrialDays,saveVendorTenant,submitVendorPasscode,vendorLoginUrl,wantsAdmin} from './cloudflare-platform.js';
+import {buildTenantCustomerUrl,clearVendorPasscodeSession,isTenantUrl,loadProductionRequest,loadPublicTenant,loadVendorPasscodeState,loadVendorTenant,mergePublicSettings,readTenantId,remainingTrialDays,saveVendorTenant,submitProductionRequest,submitVendorPasscode,vendorLoginUrl,wantsAdmin} from './cloudflare-platform.js';
 
 const main=document.querySelector('#main'),progress=document.querySelector('#progressWrap'),headerCompany=document.querySelector('#headerCompany');
 const LOGO_MAX_SOURCE_BYTES=1024*1024,LOGO_EDGE=64,LOGO_MAX_DATA_URL_LENGTH=1800;
@@ -59,6 +59,7 @@ async function handleClick(e){
     if(action==='vendor-passcode-reset-help')showVendorResetHelp();
     if(action==='vendor-change-passcode')showVendorChangePasscode();
     if(action==='vendor-logout')await logoutVendor();
+    if(action==='vendor-production-request')showProductionRequestDialog();
     if(action==='start')start();
     if(action==='resume'){const d=storage.getDraft();start(d||null)}
     if(action==='home')goHome();
@@ -198,10 +199,21 @@ async function changeVendorPasscode(){const current=document.querySelector('#cur
 
 async function logoutVendor(){try{await clearVendorPasscodeSession(platform.tenantId)}finally{location.href='/cdn-cgi/access/logout'}}
 
-function enhanceTenantLicenseCard(){
+async function enhanceTenantLicenseCard(){
   if(!platform.tenantId||!platform.vendorAuthenticated||platform.tenant?.licenseType==='production')return;
   const form=document.querySelector('#settingsForm'),days=remainingTrialDays(platform.tenant);if(!form||days===null)return;
-  const card=document.createElement('div');card.className='card stack trial-admin-card';card.innerHTML=`<div class="history-head"><div><p class="eyebrow">試験利用版</p><h2>管理画面を利用できます</h2></div><span class="status">${days===0?'本日まで':`残り${days}日`}</span></div><p>試験期間中も、会社情報・受付メール・料金・ロゴ・案内文を変更し、お客様用URLとQR画像を発行できます。</p><p class="hint">期限延長または本番利用への切替はサービス運営者が行います。</p>`;form.prepend(card)
+  const card=document.createElement('div');card.className='card stack trial-admin-card';card.innerHTML=`<div class="history-head"><div><p class="eyebrow">試験利用版</p><h2>管理画面を利用できます</h2></div><span class="status">${days===0?'本日まで':`残り${days}日`}</span></div><p>試験期間中も、会社情報・受付メール・料金・ロゴ・案内文を変更し、お客様用URLとQR画像を発行できます。</p><p class="hint">本番利用は、下のボタンから運営者へ申し込めます。申込時点で課金や契約は確定しません。</p><div id="productionRequestArea"><button class="button" type="button" data-action="vendor-production-request">本番利用を申し込む</button></div>`;form.prepend(card);
+  try{const result=await loadProductionRequest(platform.tenantId),area=document.querySelector('#productionRequestArea');if(!area)return;if(result.request?.status==='requested')area.innerHTML='<p class="share-ready"><strong>本番利用申込を受け付けました</strong>運営者からの連絡をお待ちください。</p>';if(result.request?.status==='declined')area.innerHTML='<p class="hint">前回の申込は確認終了となっています。必要な場合は再度お申し込みください。</p><button class="button" type="button" data-action="vendor-production-request">本番利用を再度申し込む</button>';}catch{}
+}
+
+function showProductionRequestDialog(){
+  showModal('本番利用を申し込む','<p>運営者が利用状況を確認し、料金・契約条件をご案内します。この送信だけで課金または契約成立にはなりません。</p><div class="field"><label for="productionApplicant">担当者名</label><input id="productionApplicant" maxlength="100" autocomplete="name"></div><div class="field"><label for="productionNote">連絡事項 <span class="optional">任意</span></label><textarea id="productionNote" maxlength="2000" placeholder="希望する連絡方法や質問をご入力ください。"></textarea></div><label class="check-line trial-consent"><input id="productionAgreement" type="checkbox"><span>運営者から料金・契約条件の案内を受けることに同意します。</span></label><p class="error" id="productionRequestError" hidden></p>',submitProductionRequestForm);document.querySelector('#modalSave').textContent='申込を送信';
+}
+
+async function submitProductionRequestForm(){
+  const applicant=document.querySelector('#productionApplicant'),note=document.querySelector('#productionNote'),agreed=document.querySelector('#productionAgreement'),error=document.querySelector('#productionRequestError'),button=document.querySelector('#modalSave');
+  if(!applicant.value.trim()){showPasscodeError(error,applicant,'担当者名を入力してください。');return}if(!agreed.checked){showPasscodeError(error,agreed,'申込条件への同意が必要です。');return}
+  button.disabled=true;try{await submitProductionRequest(platform.tenantId,{applicantName:applicant.value.trim(),note:note.value.trim(),agreed:true});closeModal();render();toast('本番利用の申込を送信しました。')}catch(caught){showPasscodeError(error,applicant,caught.message)}finally{button.disabled=false}
 }
 
 function enhanceTenantSecurityCard(){if(!platform.tenantId||!platform.vendorAuthenticated)return;const form=document.querySelector('#settingsForm');if(!form)return;const card=document.createElement('div');card.className='card stack';card.innerHTML=`<h2>ログインとパスコード</h2><p class="hint">ログイン中：${escapeHtml(platform.userEmail)}</p><p class="hint">メール確認と登録者専用パスコードで保護されています。ログイン状態は24時間有効です。</p><div class="tool-row"><button class="button secondary" type="button" data-action="vendor-change-passcode">パスコードを変更</button><button class="button ghost" type="button" data-action="vendor-logout">ログアウト</button></div>`;form.insertBefore(card,form.lastElementChild)}

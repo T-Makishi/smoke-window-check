@@ -1,5 +1,5 @@
 const main=document.querySelector('#serviceMain'),toastElement=document.querySelector('#toast');
-let tenants=[],serviceEmail='',passcodeState=null;
+let tenants=[],applications=[],productionRequests=[],serviceEmail='',passcodeState=null;
 main.addEventListener('click',authAction);
 initialize();
 
@@ -11,12 +11,35 @@ async function initialize(){
   }catch(error){['authentication_required','network_error'].includes(error.code)?renderLogin():renderFailure(error.message)}
 }
 
-async function loadTenants(){const data=await api('/api/service/tenants');tenants=data.tenants;serviceEmail=data.user.email;render()}
+async function loadTenants(){const [data,onboarding]=await Promise.all([api('/api/service/tenants'),api('/api/service/applications')]);tenants=data.tenants;applications=onboarding.applications;productionRequests=onboarding.productionRequests;serviceEmail=data.user.email;render()}
 
 function render(){
   main.innerHTML=`<section class="screen"><div class="screen-header"><p class="eyebrow">サービス運営者専用</p><h1>利用契約の管理</h1><p class="screen-intro">試験利用または期限のない本番利用として業者を登録します。</p></div><div class="card stack"><h2>ログインとパスコード</h2><p class="hint">ログイン中：${escapeHtml(serviceEmail)}</p><p class="hint">メール確認と登録者専用パスコードで保護されています。ログイン状態は24時間有効です。</p><div class="tool-row"><button class="button secondary" data-action="change-passcode" type="button">パスコードを変更</button><button class="button ghost" data-action="logout" type="button">ログアウト</button></div></div><form id="tenantForm" class="card stack"><h2>新しい業者を登録</h2><div class="field"><label for="companyName">会社名</label><input id="companyName" name="companyName" required maxlength="200"></div><div class="field"><label for="vendorEmail">業者ログイン用メール</label><input id="vendorEmail" name="vendorEmail" type="email" required></div><div class="field"><label for="licensePlan">利用区分</label><select id="licensePlan" name="licensePlan"><option value="trial:7">試験利用・7日</option><option value="trial:14">試験利用・14日</option><option value="trial:30" selected>試験利用・30日</option><option value="production">本番利用・期限なし</option></select></div><button class="button" type="submit">業者を登録してURLを発行</button></form><div class="section stack" id="tenantList">${tenantCards()}</div></section>`;
   document.querySelector('#tenantForm').addEventListener('submit',createTenant);
   document.querySelector('#tenantList').addEventListener('click',tenantAction);
+  renderOnboardingSections();
+}
+
+function renderOnboardingSections(){
+  const list=document.querySelector('#tenantList');if(!list)return;
+  const wrapper=document.createElement('div');wrapper.className='stack section';wrapper.id='onboardingSections';wrapper.innerHTML=`<section class="card stack"><div class="history-head"><div><p class="eyebrow">Web申込</p><h2>無料体験の申込者</h2></div><span class="status">${applications.length}件</span></div>${applicationRows()}</section><section class="card stack"><div class="history-head"><div><p class="eyebrow">確認・承認</p><h2>本番利用の申込</h2></div><span class="status">${productionRequests.filter(item=>item.status==='requested').length}件待ち</span></div>${productionRequestRows()}</section><div class="screen-header section"><p class="eyebrow">利用管理</p><h2>登録業者・試験利用者</h2><p class="hint">停止・再開・期限延長は各業者カードから操作できます。</p></div>`;
+  wrapper.addEventListener('click',onboardingAction);list.before(wrapper);
+}
+
+function applicationRows(){
+  if(!applications.length)return '<p class="hint">Webからの申込はまだありません。</p>';
+  return `<div class="admin-table">${applications.map(item=>`<article class="admin-table__row"><div><strong>${escapeHtml(item.companyName)}</strong><p>${escapeHtml(item.contactName)}・${escapeHtml(item.email)}・${escapeHtml(item.phone)}</p></div><div><span class="status">${applicationStateLabel(item.status)}</span><p class="hint">${formatDate(item.createdAt)}</p>${item.tenantId?`<code>${escapeHtml(item.tenantId)}</code>`:''}</div></article>`).join('')}</div>`;
+}
+
+function productionRequestRows(){
+  if(!productionRequests.length)return '<p class="hint">本番利用の申込はまだありません。</p>';
+  return `<div class="admin-table">${productionRequests.map(item=>`<article class="admin-table__row"><div><strong>${escapeHtml(item.companyName)}</strong><p>${escapeHtml(item.applicantName)}・${escapeHtml(item.vendorEmail)}</p>${item.note?`<p class="hint">${escapeHtml(item.note)}</p>`:''}</div><div><span class="status">${productionStateLabel(item.status)}</span><p class="hint">${formatDate(item.requestedAt)}</p>${item.status==='requested'?`<div class="tool-row"><button class="button small" data-onboarding-action="approve-production" data-id="${item.tenantId}">本番利用を承認</button><button class="button secondary small" data-onboarding-action="decline-production" data-id="${item.tenantId}">見送る</button></div>`:''}</div></article>`).join('')}</div>`;
+}
+
+async function onboardingAction(event){
+  const button=event.target.closest('[data-onboarding-action]');if(!button)return;const action=button.dataset.onboardingAction,request=productionRequests.find(item=>item.tenantId===button.dataset.id);if(!request)return;
+  const confirmText=action==='approve-production'?`${request.companyName}を期限なしの本番利用へ切り替えますか？`:`${request.companyName}の本番利用申込を見送りますか？`;if(!confirm(confirmText))return;
+  button.disabled=true;try{await api('/api/service/applications',{method:'PATCH',body:{tenantId:request.tenantId,action}});await loadTenants();toast(action==='approve-production'?'本番利用へ切り替えました。':'申込状態を更新しました。')}catch(error){toast(error.message)}finally{button.disabled=false}
 }
 
 function renderPasscodeGate(){
@@ -84,6 +107,8 @@ async function api(path,{method='GET',body}={}){let response;try{response=await 
 function apiError(code,message){const error=new Error(message);error.code=code;return error}
 const customerUrl=id=>`${location.origin}/?t=${encodeURIComponent(id)}`;
 const stateLabel=state=>({active:'利用中',expired:'期限終了',suspended:'停止中',invalid:'要確認'}[state]||'未確認');
+const applicationStateLabel=state=>({pending:'メール確認待ち',issued:'発行済み',cancelled:'取消'}[state]||'要確認');
+const productionStateLabel=state=>({requested:'承認待ち',approved:'承認済み',declined:'見送り',cancelled:'取消'}[state]||'要確認');
 const formatDate=value=>new Intl.DateTimeFormat('ja-JP',{dateStyle:'medium',timeStyle:'short',timeZone:'Asia/Tokyo'}).format(new Date(value));
 const escapeHtml=value=>String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
 async function copyText(text){if(navigator.clipboard?.writeText)return navigator.clipboard.writeText(text);const area=document.createElement('textarea');area.value=text;area.style.position='fixed';area.style.opacity='0';document.body.append(area);area.select();const ok=document.execCommand('copy');area.remove();if(!ok)throw new Error()}

@@ -48,6 +48,9 @@
   .feature-item { font-size: 12px; }
   .fixed-actions .button, .actions .button { padding-right: 10px; padding-left: 10px; }
   .license-banner__inner { flex-wrap: wrap; gap: 6px 8px; font-size: 13px; }
+  .admin-table__row { grid-template-columns: 1fr; }
+  .admin-table__row > :last-child { text-align: left; }
+  .admin-table__row .tool-row { justify-content: flex-start; }
 }
 @media (max-width: 340px) {
   .page-container, main { padding-right: 10px; padding-left: 10px; }

@@ -51,6 +51,12 @@
 .trial-admin-card { background: #fffaf0; border-color: var(--color-warning-border); }
 details summary { color: var(--color-primary); font-weight: 800; cursor: pointer; }
 details[open] summary { margin-bottom: 10px; }
+.admin-table { display: grid; gap: 0; }
+.admin-table__row { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(220px, .75fr); gap: 18px; padding: 18px 0; border-top: 1px solid var(--color-border); }
+.admin-table__row:first-child { border-top: 0; }
+.admin-table__row p { margin: 5px 0 0; overflow-wrap: anywhere; }
+.admin-table__row > :last-child { text-align: right; }
+.admin-table__row .tool-row { justify-content: flex-end; margin-top: 10px; }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; animation: none !important; transition: none !important; }
