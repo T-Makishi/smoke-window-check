@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {DEFAULT_SETTINGS} from '../js/estimate-config.js';
-import {renderCustomerGuide,renderHome} from '../js/ui.js';
+import {renderCustomerGuide,renderHome,renderSettings} from '../js/ui.js';
 
 test('顧客トップに開始・操作ガイド・印刷・電話の導線を表示する',()=>{
   const settings=structuredClone(DEFAULT_SETTINGS);
@@ -30,7 +30,7 @@ test('無料体験フォームは申込操作と本人確認後の処理を明�
   const html=await readFile(new URL('../trial.html',import.meta.url),'utf8');
   assert.match(html,/7日間無料体験を申し込む/);
   assert.match(html,/確認完了後、運営者へ正式申込として通知され、会社専用URLが発行されます/);
-  assert.match(html,/導入後のお客様用画面イメージ/);
+  assert.match(html,/業者が見積依頼者へ案内する事前問診画面/);
   assert.match(html,/browser-mock/);
   assert.match(html,/\?demo=1&amp;embed=1/);
   assert.doesNotMatch(html,/>確認メールを受け取る</);
@@ -61,7 +61,7 @@ test('運営管理は申込の再送・手動承認と運営者メール変更�
 test('業者向けLP内で保存・送信しない操作モックを提供する',async()=>{
   const business=await readFile(new URL('../trial.html',import.meta.url),'utf8');
   const app=await readFile(new URL('../js/app.js',import.meta.url),'utf8');
-  assert.match(business,/導入後のお客様用画面イメージ/);
+  assert.match(business,/業者が見積依頼者へ案内する事前問診画面/);
   assert.match(business,/browser-mock/);
   assert.doesNotMatch(business,/href="\/\?demo=1"/);
   assert.match(business,/customer-demo-phone/);
@@ -73,6 +73,30 @@ test('業者向けLP内で保存・送信しない操作モックを提供する
   assert.match(app,/demoSampleDraft/);
   assert.match(app,/if\(!platform\.demo\)/);
   assert.match(app,/入力内容を保存・送信していません/);
+});
+
+test('業者向けLPは開発目的・三者関係・無料登録から顧客対応までを説明する',async()=>{
+  const business=await readFile(new URL('../trial.html',import.meta.url),'utf8');
+  assert.match(business,/遠方へ行く前に/);
+  assert.match(business,/受注の判断材料を/);
+  assert.match(business,/アプリ運営者/);
+  assert.match(business,/排煙窓業者/);
+  assert.match(business,/見積依頼者/);
+  assert.match(business,/無料登録から顧客対応まで/);
+  assert.match(business,/6ステップ/);
+  assert.match(business,/送信画面で写真・動画を添付/);
+});
+
+test('運営者設定は重要操作を先頭に置き分類別に整理する',()=>{
+  const html=renderSettings(structuredClone(DEFAULT_SETTINGS));
+  assert.match(html,/settings-priority-card/);
+  assert.match(html,/settings-jump-nav/);
+  assert.match(html,/会社情報・ロゴ/);
+  assert.match(html,/受付・お問い合わせ/);
+  assert.match(html,/現地調査費・訪問条件/);
+  assert.match(html,/概算料金・加算額/);
+  assert.match(html,/画面表示・案内文/);
+  assert.match(html,/問診結果を受け取るメールアドレス/);
 });
 
 test('会社別のお客様URLを問診画面へ直接統一する',async()=>{

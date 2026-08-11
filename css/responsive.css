@@ -40,7 +40,7 @@
 @media (min-width: 1280px) {
   :root { --content-width: 1200px; }
   .site-header { padding-right: max(40px, calc((100vw - 1200px) / 2)); padding-left: max(40px, calc((100vw - 1200px) / 2)); }
-  .screen:has(#settingsForm) #settingsForm { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .screen:has(#settingsForm) #settingsForm { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .screen:has(#settingsForm) #settingsForm > .tool-row { grid-column: 1 / -1; }
 }
 @media (max-width: 480px) {
@@ -68,6 +68,16 @@
   .guide-phone { width: 210px; }
   .guide-phone__screen { min-height: 270px; }
   .guide-phone-grid figcaption { max-width: 280px; margin-right: auto; margin-left: auto; font-size: 15px; }
+  .settings-header { grid-template-columns: 1fr; gap: 12px; }
+  .settings-jump-nav { top: calc(var(--header-height) + 72px); margin-right: -6px; margin-left: -6px; }
+  .settings-form { grid-template-columns: 1fr; }
+  .settings-priority-card,.settings-reset-row { grid-column: 1; }
+  .settings-fields-grid { grid-template-columns: 1fr; }
+  .settings-fields-grid .field--wide { grid-column: 1; }
+  .settings-group > summary { padding: 16px; }
+  .settings-group__body { padding: 16px; }
+  .trial-admin-summary { align-items: stretch; flex-direction: column; }
+  .trial-admin-summary .button { width: 100%; }
 }
 @media (max-width: 340px) {
   .page-container, main { padding-right: 10px; padding-left: 10px; }
