@@ -10,6 +10,14 @@ export function isTenantUrl(inputUrl){return new URL(inputUrl).searchParams.has(
 
 export function wantsAdmin(inputUrl){return new URL(inputUrl).searchParams.get('admin')==='1'}
 
+export function remainingTrialDays(tenant,now=Date.now()){
+  if(!tenant||tenant.licenseType==='production')return null;
+  const expiresAt=Date.parse(tenant.expiresAt),current=now instanceof Date?now.getTime():Number(now);
+  if(!Number.isFinite(expiresAt)||!Number.isFinite(current))return null;
+  const remaining=expiresAt-current;
+  return remaining<=0?0:Math.ceil(remaining/(24*60*60*1000));
+}
+
 export function buildTenantCustomerUrl(tenantId,inputUrl){
   if(!TENANT_PATTERN.test(String(tenantId||'')))throw new Error('お客様用URLを作成できません。業者登録を確認してください。');
   const url=new URL(inputUrl);

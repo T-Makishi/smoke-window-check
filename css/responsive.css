@@ -1,11 +1,53 @@
 @media (min-width: 560px) {
-  .page-container, main { padding-right: 20px; padding-left: 20px; }
+  :root { --content-width: 760px; }
+  .page-container, main { padding: 34px 24px calc(154px + env(safe-area-inset-bottom)); }
+  .choice-grid, .option-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  #customerFields { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  #customerFields > :last-child:nth-child(odd) { grid-column: 1 / -1; }
+  .card, .option-card, .notice-card, .price-card { padding: 20px; }
+  .page-title, .screen h1 { font-size: clamp(30px, 5vw, 38px); }
+  .compare { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .modal { width: min(620px, 100%); padding: 28px; }
+  .license-banner__inner { justify-content: flex-start; padding-right: 24px; padding-left: 24px; }
+}
+@media (min-width: 720px) and (max-width: 899px) {
+  .screen:has(#settingsForm) #settingsForm { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; }
+  .screen:has(#settingsForm) #settingsForm > .tool-row { grid-column: 1 / -1; }
+  #serviceMain #tenantForm { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  #serviceMain #tenantForm > h2, #serviceMain #tenantForm > button { grid-column: 1 / -1; }
+}
+@media (min-width: 900px) {
+  :root { --content-width: 1120px; }
+  .page-container, main { padding: 42px 32px 118px; }
+  .site-header { padding-right: max(32px, calc((100vw - 1120px) / 2)); padding-left: max(32px, calc((100vw - 1120px) / 2)); }
+  .license-banner__inner { padding-right: 32px; padding-left: 32px; }
+  .screen:has(.hero-section) { display: grid; grid-template-columns: minmax(0, 1.12fr) minmax(340px, .88fr); grid-template-areas: "hero actions" "notice privacy"; align-items: start; gap: 24px 32px; }
+  .screen:has(.hero-section) .hero-section { grid-area: hero; padding-top: 22px; }
+  .screen:has(.hero-section) .notice-card { grid-area: notice; }
+  .screen:has(.hero-section) .home-actions { grid-area: actions; margin-top: 0; }
+  .screen:has(.hero-section) .privacy { grid-area: privacy; margin-top: 0; }
+  .screen:has(#stepForm), .screen:has(.price-box), .screen:has(.success-mark), .screen:has(#passcodeForm) { max-width: 780px; margin: 0 auto; }
+  .screen:has(#settingsForm) #settingsForm { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; }
+  .screen:has(#settingsForm) #settingsForm > .tool-row { grid-column: 1 / -1; }
+  #serviceMain .screen { max-width: 1120px; margin: 0 auto; }
+  #serviceMain #tenantForm { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  #serviceMain #tenantForm > h2, #serviceMain #tenantForm > button { grid-column: 1 / -1; }
+  #tenantList { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .fixed-actions, .actions { right: auto; left: 50%; width: min(780px, calc(100% - 48px)); padding: 12px; border: 1px solid var(--color-border); border-bottom: 0; border-radius: 14px 14px 0 0; box-shadow: 0 -4px 18px rgba(13,43,69,.08); transform: translateX(-50%); }
+  .toast { bottom: 92px; }
+}
+@media (min-width: 1280px) {
+  :root { --content-width: 1200px; }
+  .site-header { padding-right: max(40px, calc((100vw - 1200px) / 2)); padding-left: max(40px, calc((100vw - 1200px) / 2)); }
+  .screen:has(#settingsForm) #settingsForm { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .screen:has(#settingsForm) #settingsForm > .tool-row { grid-column: 1 / -1; }
 }
 @media (max-width: 480px) {
   .summary-row { grid-template-columns: 1fr; gap: 2px; }
   .site-header { font-size: 15px; }
   .feature-item { font-size: 12px; }
   .fixed-actions .button, .actions .button { padding-right: 10px; padding-left: 10px; }
+  .license-banner__inner { flex-wrap: wrap; gap: 6px 8px; font-size: 13px; }
 }
 @media (max-width: 340px) {
   .page-container, main { padding-right: 10px; padding-left: 10px; }

@@ -9,7 +9,7 @@ import {settingsFromForm,resetSettings} from './settings.js';
 import {customerFields,renderDetail,renderHistory,renderHome,renderSettings,renderStep} from './ui.js';
 import {hashPasscode,verifyPasscode} from './security.js';
 import {applyCustomerConfigFromUrl,buildCustomerUrl} from './recipient-link.js';
-import {buildTenantCustomerUrl,clearVendorPasscodeSession,isTenantUrl,loadPublicTenant,loadVendorPasscodeState,loadVendorTenant,mergePublicSettings,readTenantId,saveVendorTenant,submitVendorPasscode,vendorLoginUrl,wantsAdmin} from './cloudflare-platform.js';
+import {buildTenantCustomerUrl,clearVendorPasscodeSession,isTenantUrl,loadPublicTenant,loadVendorPasscodeState,loadVendorTenant,mergePublicSettings,readTenantId,remainingTrialDays,saveVendorTenant,submitVendorPasscode,vendorLoginUrl,wantsAdmin} from './cloudflare-platform.js';
 
 const main=document.querySelector('#main'),progress=document.querySelector('#progressWrap'),headerCompany=document.querySelector('#headerCompany');
 const LOGO_MAX_SOURCE_BYTES=1024*1024,LOGO_EDGE=64,LOGO_MAX_DATA_URL_LENGTH=1800;
@@ -28,7 +28,7 @@ async function initialize(){
   if(tenantParamPresent&&!tenantId){renderPlatformUnavailable('invalid');return}
   if(tenantId){
     try{
-      const result=await loadPublicTenant(tenantId);platform.tenant=result.tenant;settings=mergePublicSettings(DEFAULT_SETTINGS,result.tenant.settings);
+      const result=await loadPublicTenant(tenantId);platform.tenant=result.tenant;settings=mergePublicSettings(DEFAULT_SETTINGS,result.tenant.settings);updateLicenseBanner();
       document.querySelector('#settingsButton').textContent='業者ログイン';
       if(wantsAdmin(location.href)){
         const auth=await loadVendorPasscodeState(tenantId);platform.passcode=auth.passcode;platform.userEmail=auth.user.email;
@@ -45,10 +45,11 @@ async function initialize(){
   if(platform.vendorAuthenticated){appState.screen='settings';render()}
 }
 
-function render(){applySettings();progress.hidden=appState.screen!=='wizard'||appState.step===8;document.body.classList.toggle('has-progress',!progress.hidden);if(appState.screen==='home')main.innerHTML=renderHome(settings,!!storage.getDraft());if(appState.screen==='wizard'){main.innerHTML=renderStep(appState.step,appState.draft,settings,appState.mediaFiles);updateProgress()}if(appState.screen==='history')main.innerHTML=renderHistory(cases,settings);if(appState.screen==='settings'){main.innerHTML=renderSettings(settings);enhanceSettings();enhanceTenantSecurityCard();enhanceShareControls()}if(appState.screen==='detail')main.innerHTML=renderDetail(appState.draft,settings);if(appState.screen==='passcode')main.innerHTML=renderVendorPasscodeGate();main.focus({preventScroll:true});scrollTo({top:0,behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'})}
+function render(){applySettings();progress.hidden=appState.screen!=='wizard'||appState.step===8;document.body.classList.toggle('has-progress',!progress.hidden);if(appState.screen==='home')main.innerHTML=renderHome(settings,!!storage.getDraft());if(appState.screen==='wizard'){main.innerHTML=renderStep(appState.step,appState.draft,settings,appState.mediaFiles);updateProgress()}if(appState.screen==='history')main.innerHTML=renderHistory(cases,settings);if(appState.screen==='settings'){main.innerHTML=renderSettings(settings);enhanceSettings();enhanceTenantLicenseCard();enhanceTenantSecurityCard();enhanceShareControls()}if(appState.screen==='detail')main.innerHTML=renderDetail(appState.draft,settings);if(appState.screen==='passcode')main.innerHTML=renderVendorPasscodeGate();main.focus({preventScroll:true});scrollTo({top:0,behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'})}
 function renderHomeScreen(){appState.screen='home';appState.step=0;render()}
 function goHome(){if(platform.blocked)return;if(appState.screen==='wizard'&&appState.step>0&&appState.step<8)syncForm();renderHomeScreen()}
 function applySettings(){document.documentElement.style.setProperty('--color-primary',settings.app.mainColor);document.documentElement.style.setProperty('--main',settings.app.mainColor);document.documentElement.style.setProperty('--color-accent',settings.app.accentColor);document.documentElement.style.setProperty('--accent',settings.app.accentColor);headerCompany.textContent=settings.company.name;document.title=settings.app.name;const mark=document.querySelector('#logoMark');mark.replaceChildren();if(settings.company.logoDataUrl?.startsWith('data:image/')){const img=document.createElement('img');img.className='logo-image';img.alt='';img.src=settings.company.logoDataUrl;mark.append(img)}else mark.textContent='窓'}
+function updateLicenseBanner(){const banner=document.querySelector('#licenseBanner'),days=remainingTrialDays(platform.tenant);if(!banner)return;if(days===null){banner.hidden=true;banner.textContent='';return}banner.hidden=false;banner.innerHTML=`<div class="license-banner__inner"><strong>試験利用中</strong><span>${days===0?'本日まで':`残り${days}日`}</span>${wantsAdmin(location.href)?'<span class="license-banner__admin">業者設定を編集中</span>':''}</div>`}
 function updateProgress(){const n=Math.min(appState.step,8);document.querySelector('#stepLabel').textContent=`STEP ${n} / 8`;document.querySelector('#stepName').textContent=['','依頼者情報','症状選択','写真・動画','現場情報','排煙窓の問診','概算・料金','内容確認','保存完了'][n];document.querySelector('#progressBar').style.width=`${n/8*100}%`;const bar=document.querySelector('[role=progressbar]');bar.setAttribute('aria-valuenow',n);bar.setAttribute('aria-valuetext',`8段階中${n}段階、${document.querySelector('#stepName').textContent}`)}
 function start(draft=null){appState.draft=normalizeCase(draft||createDraft());appState.mediaFiles=[];appState.editingId=draft?.id||null;appState.screen='wizard';appState.step=1;render();draftSaved()}
 async function handleClick(e){
@@ -196,6 +197,12 @@ function showVendorChangePasscode(){showModal('パスコードを変更','<div c
 async function changeVendorPasscode(){const current=document.querySelector('#currentVendorPasscode'),next=document.querySelector('#newVendorPasscode'),confirmation=document.querySelector('#confirmVendorPasscode'),error=document.querySelector('#changePasscodeError'),button=document.querySelector('#modalSave');if(!/^\d{6,8}$/.test(next.value.trim())){showPasscodeError(error,next,'新しいパスコードは6〜8桁の数字で入力してください。');return}if(next.value.trim()!==confirmation.value.trim()){showPasscodeError(error,confirmation,'確認用パスコードが一致しません。');return}button.disabled=true;try{await submitVendorPasscode(platform.tenantId,{action:'change',currentPasscode:current.value.trim(),newPasscode:next.value.trim()});closeModal();toast('パスコードを変更しました。')}catch(caught){showPasscodeError(error,current,caught.message)}finally{button.disabled=false}}
 
 async function logoutVendor(){try{await clearVendorPasscodeSession(platform.tenantId)}finally{location.href='/cdn-cgi/access/logout'}}
+
+function enhanceTenantLicenseCard(){
+  if(!platform.tenantId||!platform.vendorAuthenticated||platform.tenant?.licenseType==='production')return;
+  const form=document.querySelector('#settingsForm'),days=remainingTrialDays(platform.tenant);if(!form||days===null)return;
+  const card=document.createElement('div');card.className='card stack trial-admin-card';card.innerHTML=`<div class="history-head"><div><p class="eyebrow">試験利用版</p><h2>管理画面を利用できます</h2></div><span class="status">${days===0?'本日まで':`残り${days}日`}</span></div><p>試験期間中も、会社情報・受付メール・料金・ロゴ・案内文を変更し、お客様用URLとQR画像を発行できます。</p><p class="hint">期限延長または本番利用への切替はサービス運営者が行います。</p>`;form.prepend(card)
+}
 
 function enhanceTenantSecurityCard(){if(!platform.tenantId||!platform.vendorAuthenticated)return;const form=document.querySelector('#settingsForm');if(!form)return;const card=document.createElement('div');card.className='card stack';card.innerHTML=`<h2>ログインとパスコード</h2><p class="hint">ログイン中：${escapeHtml(platform.userEmail)}</p><p class="hint">メール確認と登録者専用パスコードで保護されています。ログイン状態は24時間有効です。</p><div class="tool-row"><button class="button secondary" type="button" data-action="vendor-change-passcode">パスコードを変更</button><button class="button ghost" type="button" data-action="vendor-logout">ログアウト</button></div>`;form.insertBefore(card,form.lastElementChild)}
 

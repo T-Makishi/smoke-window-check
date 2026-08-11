@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {DEFAULT_SETTINGS} from '../js/estimate-config.js';
-import {buildTenantCustomerUrl,mergePublicSettings,readTenantId,vendorLoginUrl} from '../js/cloudflare-platform.js';
+import {buildTenantCustomerUrl,mergePublicSettings,readTenantId,remainingTrialDays,vendorLoginUrl} from '../js/cloudflare-platform.js';
 import {licenseState,productionWindow,trialWindow} from '../functions/_lib/trial.js';
 import {sanitizeSettings} from '../functions/_lib/settings.js';
 
@@ -42,6 +42,13 @@ test('本番利用は期限なし、停止操作は有効',()=>{
   assert.equal(window.expiresAt,'9999-12-31T14:59:59.999Z');
   assert.equal(licenseState({status:'active',license_type:'production',expires_at:'2000-01-01T00:00:00.000Z'}),'active');
   assert.equal(licenseState({status:'suspended',license_type:'production',expires_at:window.expiresAt}),'suspended');
+});
+
+test('試験版だけ残日数を表示する',()=>{
+  const now=Date.parse('2026-08-11T00:00:00.000Z');
+  assert.equal(remainingTrialDays({licenseType:'trial',expiresAt:'2026-08-13T14:59:59.999Z'},now),3);
+  assert.equal(remainingTrialDays({licenseType:'trial',expiresAt:'2026-08-11T00:00:00.000Z'},now),0);
+  assert.equal(remainingTrialDays({licenseType:'production',expiresAt:'9999-12-31T14:59:59.999Z'},now),null);
 });
 
 test('サーバー保存設定から秘密情報を除外して検証する',()=>{

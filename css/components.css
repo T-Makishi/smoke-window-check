@@ -9,6 +9,10 @@
   border: 1.5px solid var(--color-primary);
   border-radius: 8px;
 }
+.license-banner { position: sticky; top: var(--header-height); z-index: 29; color: #5f4300; background: #fff4c7; border-bottom: 1px solid #e1bd42; }
+.license-banner__inner { display: flex; width: 100%; max-width: var(--content-width); min-height: 42px; align-items: center; justify-content: center; gap: 10px; margin: 0 auto; padding: 8px 16px; font-size: 14px; }
+.license-banner__inner strong { padding: 3px 9px; color: #fff; background: #8a6200; border-radius: 999px; }
+.license-banner__admin { color: var(--color-primary); font-weight: 800; }
 .hero-section { padding: 4px 0 2px; text-align: center; }
 .hero-kicker { margin-bottom: 10px; color: var(--color-secondary); font-size: 15px; font-weight: 800; }
 .hero-title { max-width: 420px; margin: 0 auto 22px; color: var(--color-text); font-size: clamp(27px, 7.5vw, 34px); line-height: 1.45; letter-spacing: .015em; }
@@ -44,6 +48,7 @@
 .success-mark { display: grid; width: 64px; height: 64px; margin: 0 auto 16px; place-items: center; color: #fff; font-size: 34px; line-height: 1; background: var(--color-success); border-radius: 50%; }
 .settings-nav { display: flex; gap: 8px; padding: 3px 3px 12px; overflow: auto; }
 .settings-nav button { white-space: nowrap; }
+.trial-admin-card { background: #fffaf0; border-color: var(--color-warning-border); }
 details summary { color: var(--color-primary); font-weight: 800; cursor: pointer; }
 details[open] summary { margin-bottom: 10px; }
 
