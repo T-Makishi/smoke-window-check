@@ -4,19 +4,30 @@ import {HttpError} from './http.js';
 
 const BREVO_ENDPOINT='https://api.brevo.com/v3/smtp/email';
 
-export async function deliverEmail(env,{eventKey,eventType,to,toName='',subject,textContent,htmlContent,tenantId=null,applicationId=null}){
+export async function deliverEmail(env,{eventKey,eventType,to,toName='',replyTo=null,subject,textContent,htmlContent,tenantId=null,applicationId=null}){
   const existing=await database(env).prepare('SELECT status, provider_message_id FROM email_events WHERE event_key=?1').bind(eventKey).first();
   if(existing?.status==='sent')return {sent:true,messageId:existing.provider_message_id,deduplicated:true};
   const apiKey=String(env.BREVO_API_KEY||''),senderEmail=String(env.EMAIL_SENDER_ADDRESS||env.SERVICE_ADMIN_EMAIL||''),senderName=String(env.EMAIL_SENDER_NAME||'排煙窓事前チェック運営事務局');
   if(!apiKey||!senderEmail)throw new HttpError(503,'email_not_configured','メール送信設定が完了していません。運営者へお問い合わせください。');
   let response,data={};
   try{
-    response=await fetch(BREVO_ENDPOINT,{method:'POST',headers:{accept:'application/json','content-type':'application/json','api-key':apiKey},body:JSON.stringify({sender:{email:senderEmail,name:senderName},to:[{email:to,name:toName}],replyTo:{email:senderEmail,name:senderName},subject,textContent,htmlContent,tags:['smoke-window-check',eventType]})});
+    response=await fetch(BREVO_ENDPOINT,{method:'POST',headers:{accept:'application/json','content-type':'application/json','api-key':apiKey},body:JSON.stringify({sender:{email:senderEmail,name:senderName},to:[{email:to,name:toName}],replyTo:replyTo||{email:senderEmail,name:senderName},subject,textContent,htmlContent,tags:['smoke-window-check',eventType]})});
     data=await response.json().catch(()=>({}));
   }catch(error){await recordEmail(env,{eventKey,eventType,to,tenantId,applicationId,status:'failed',errorMessage:'network_error'});throw new HttpError(503,'email_delivery_failed','確認メールを送信できませんでした。時間をおいて再度お試しください。')}
   if(!response.ok){await recordEmail(env,{eventKey,eventType,to,tenantId,applicationId,status:'failed',errorMessage:String(data.message||`HTTP ${response.status}`).slice(0,500)});throw new HttpError(503,'email_delivery_failed','確認メールを送信できませんでした。時間をおいて再度お試しください。')}
   await recordEmail(env,{eventKey,eventType,to,tenantId,applicationId,status:'sent',messageId:String(data.messageId||'')});
   return {sent:true,messageId:data.messageId||null,deduplicated:false};
+}
+
+export async function sendInquiryReceivedEmail(env,{tenantId,inquiryId,caseNumber,companyName,recipient,inquiry}){
+  const customer=inquiry.customer,site=inquiry.site,diagnosis=inquiry.diagnosis,estimate=inquiry.estimate,media=inquiry.media;
+  const customerName=customer.companyName||customer.storeName||customer.facilityName||customer.contactName;
+  const address=[site.prefecture,site.city,site.address,site.buildingName,site.floor,site.room].filter(Boolean).join(' ');
+  const rows=[['受付番号',caseNumber],['依頼者',customerName],['担当者',customer.contactName],['電話番号',customer.phone],['メール',customer.email||'未入力'],['現場住所',address],['現場名',site.siteName||'未入力'],['症状',diagnosis.symptoms.join('、')],['メーカー',diagnosis.makerName||'不明'],['設置高さ',labelValue('height',diagnosis.heightType)],['対象数量',labelValue('quantity',diagnosis.quantity)],['緊急度',labelValue('urgency',diagnosis.urgency)],['概算金額',`${formatYen(estimate.minimumPrice)}〜${formatYen(estimate.maximumPrice)}`],['写真・動画',`${media.count}点（実データはメール・サーバーに保存されません）`]];
+  const text=`${companyName} ご担当者様\n\n新しい排煙窓事前チェックを受け付けました。\n\n${rows.map(([label,value])=>`${label}：${value}`).join('\n')}\n\n業者設定画面の「問い合わせ管理」で詳細を確認できます。`;
+  const html=`<h2>新しい排煙窓事前チェック</h2><p><strong>案件番号：${escapeHtml(caseNumber)}</strong></p><table style="border-collapse:collapse;width:100%;max-width:720px">${rows.map(([label,value])=>`<tr><th style="padding:7px;text-align:left;border-bottom:1px solid #d9e2dd">${escapeHtml(label)}</th><td style="padding:7px;border-bottom:1px solid #d9e2dd">${escapeHtml(value)}</td></tr>`).join('')}</table><p>業者設定画面の「問い合わせ管理」で詳細・対応状況・社内メモを確認できます。</p>`;
+  const replyTo=customer.email?{email:customer.email,name:customer.contactName||customerName}:null;
+  return deliverEmail(env,{eventKey:`inquiry-received:${inquiryId}`,eventType:'inquiry_received',to:recipient,toName:companyName,replyTo,subject:`【排煙窓事前チェック／${caseNumber}】${customerName}`,textContent:text,htmlContent:html,tenantId});
 }
 
 export async function sendVerificationEmail(env,{applicationId,companyName,contactName,email,verificationUrl,tokenHash}){
@@ -82,3 +93,5 @@ async function recordEmail(env,{eventKey,eventType,to,tenantId,applicationId,sta
 
 function escapeHtml(value){return String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]))}
 function formatJapan(value){return new Intl.DateTimeFormat('ja-JP',{dateStyle:'long',timeStyle:'short',timeZone:'Asia/Tokyo'}).format(new Date(value))}
+function formatYen(value){return `${Number(value||0).toLocaleString('ja-JP')}円`}
+function labelValue(group,value){const labels={height:{ground:'床から2m未満',ladder:'2〜4m程度',high:'4m以上',unknown:'不明'},quantity:{one:'1窓',twoThree:'2〜3窓',fourPlus:'4窓以上',unknown:'不明'},urgency:{normal:'通常',soon:'できるだけ早く',emergency:'緊急'}};return labels[group]?.[value]||value||'未入力'}

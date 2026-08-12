@@ -48,6 +48,26 @@ export async function saveVendorTenant(tenantId,settings,{fetcher=fetch,origin=l
   return requestJson(url,{fetcher,credentials:'same-origin',method:'PUT',headers:{'content-type':'application/json'},body:JSON.stringify({settings})});
 }
 
+export async function submitPublicInquiry(tenantId,inquiry,{fetcher=fetch,origin=location.origin}={}){
+  const url=new URL('/api/public/inquiries',origin);url.searchParams.set('tenant',tenantId);
+  return requestJson(url,{fetcher,method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({clientSubmissionId:inquiry.id,agreed:inquiry.submission?.agreed===true,inquiry})});
+}
+
+export async function loadVendorInquiries(tenantId,{query='',status='',id=''},{fetcher=fetch,origin=location.origin}={}){
+  const url=new URL('/api/vendor/inquiries',origin);url.searchParams.set('tenant',tenantId);if(query)url.searchParams.set('q',query);if(status)url.searchParams.set('status',status);if(id)url.searchParams.set('id',id);
+  return requestJson(url,{fetcher,credentials:'same-origin'});
+}
+
+export async function updateVendorInquiry(tenantId,input,{fetcher=fetch,origin=location.origin}={}){
+  const url=new URL('/api/vendor/inquiries',origin);url.searchParams.set('tenant',tenantId);
+  return requestJson(url,{fetcher,credentials:'same-origin',method:'PATCH',headers:{'content-type':'application/json'},body:JSON.stringify(input)});
+}
+
+export async function deleteVendorInquiry(tenantId,id,{fetcher=fetch,origin=location.origin}={}){
+  const url=new URL('/api/vendor/inquiries',origin);url.searchParams.set('tenant',tenantId);
+  return requestJson(url,{fetcher,credentials:'same-origin',method:'DELETE',headers:{'content-type':'application/json'},body:JSON.stringify({id})});
+}
+
 export async function loadVendorPasscodeState(tenantId,{fetcher=fetch,origin=location.origin}={}){
   const url=new URL('/api/vendor/passcode',origin);url.searchParams.set('tenant',tenantId);
   return requestJson(url,{fetcher,credentials:'same-origin'});

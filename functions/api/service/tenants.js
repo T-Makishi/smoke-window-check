@@ -75,6 +75,7 @@ export async function onRequestDelete({request,env}){
       db.prepare('DELETE FROM auth_credentials WHERE subject=?1').bind(subject),
       db.prepare('DELETE FROM email_events WHERE tenant_id=?1 OR application_id IN (SELECT id FROM trial_applications WHERE tenant_id=?1)').bind(id),
       db.prepare('DELETE FROM production_requests WHERE tenant_id=?1').bind(id),
+      db.prepare('DELETE FROM vendor_inquiries WHERE tenant_id=?1').bind(id),
       db.prepare('DELETE FROM trial_applications WHERE tenant_id=?1').bind(id),
       db.prepare('DELETE FROM tenants WHERE id=?1').bind(id),
     ]);

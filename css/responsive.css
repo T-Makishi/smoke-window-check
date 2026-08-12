@@ -78,6 +78,13 @@
   .settings-group__body { padding: 16px; }
   .trial-admin-summary { align-items: stretch; flex-direction: column; }
   .trial-admin-summary .button { width: 100%; }
+  .inquiry-entry-card { grid-template-columns: 1fr; }
+  .inquiry-entry-card > div:last-child { justify-items: stretch; }
+  .vendor-inquiries__header { align-items: stretch; flex-direction: column; }
+  .inquiry-search { grid-template-columns: 1fr; }
+  .inquiry-search .tool-row { grid-column: 1; }
+  .inquiry-list-summary { grid-template-columns: 1fr; }
+  .inquiry-list-summary > div:nth-child(odd),.inquiry-list-summary > div:nth-child(even) { padding-right: 0; padding-left: 0; border-left: 0; }
 }
 @media (max-width: 340px) {
   .page-container, main { padding-right: 10px; padding-left: 10px; }
