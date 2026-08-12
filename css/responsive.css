@@ -11,8 +11,8 @@
   .license-banner__inner { justify-content: flex-start; padding-right: 24px; padding-left: 24px; }
 }
 @media (min-width: 720px) and (max-width: 899px) {
-  .screen:has(#settingsForm) #settingsForm { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; }
-  .screen:has(#settingsForm) #settingsForm > .tool-row { grid-column: 1 / -1; }
+  .screen:has(#settingsForm) #settingsForm { grid-template-columns: minmax(0, 1fr); align-items: start; }
+  .screen:has(#settingsForm) #settingsForm > .tool-row { grid-column: 1; }
   #serviceMain #tenantForm { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
   #serviceMain #tenantForm > h2, #serviceMain #tenantForm > button { grid-column: 1 / -1; }
 }
@@ -28,8 +28,8 @@
   .screen:has(.hero-section) .home-actions { grid-area: actions; margin-top: 0; }
   .screen:has(.hero-section) .privacy { grid-area: privacy; margin-top: 0; }
   .screen:has(#stepForm), .screen:has(.price-box), .screen:has(.success-mark), .screen:has(#passcodeForm) { max-width: 780px; margin: 0 auto; }
-  .screen:has(#settingsForm) #settingsForm { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; }
-  .screen:has(#settingsForm) #settingsForm > .tool-row { grid-column: 1 / -1; }
+  .screen:has(#settingsForm) #settingsForm { grid-template-columns: minmax(0, 1fr); align-items: start; }
+  .screen:has(#settingsForm) #settingsForm > .tool-row { grid-column: 1; }
   #serviceMain .screen { max-width: 1120px; margin: 0 auto; }
   #serviceMain #tenantForm { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
   #serviceMain #tenantForm > h2, #serviceMain #tenantForm > button { grid-column: 1 / -1; }
@@ -40,8 +40,8 @@
 @media (min-width: 1280px) {
   :root { --content-width: 1200px; }
   .site-header { padding-right: max(40px, calc((100vw - 1200px) / 2)); padding-left: max(40px, calc((100vw - 1200px) / 2)); }
-  .screen:has(#settingsForm) #settingsForm { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .screen:has(#settingsForm) #settingsForm > .tool-row { grid-column: 1 / -1; }
+  .screen:has(#settingsForm) #settingsForm { grid-template-columns: minmax(0, 1fr); }
+  .screen:has(#settingsForm) #settingsForm > .tool-row { grid-column: 1; }
 }
 @media (max-width: 480px) {
   .summary-row { grid-template-columns: 1fr; gap: 2px; }
