@@ -21,9 +21,9 @@ test('顧客操作ガイドに4手順・注意事項・QR印刷領域を表示�
   const settings=structuredClone(DEFAULT_SETTINGS);
   const html=renderCustomerGuide(settings,'https://example.com/?t=sw_test');
   assert.match(html,/案内URL・QRを開く/);
-  assert.match(html,/質問に回答する/);
-  assert.match(html,/排煙窓を撮影する/);
-  assert.match(html,/内容を確認して送る/);
+  assert.match(html,/症状を選び、質問に答える/);
+  assert.match(html,/画面の案内どおりに撮影する/);
+  assert.match(html,/結果を確認して送る/);
   assert.match(html,/guideQrCanvas/);
   assert.match(html,/PCSAPO \/ マキシ企画/);
 });
