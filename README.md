@@ -82,7 +82,7 @@ python3 -m http.server 4173
 
 ランディングページは導入を検討する業者専用です。見積依頼者はランディングページを使用せず、依頼先業者から案内された会社専用URLから実際の問診を行います。
 
-本機能を有効化する前に、D1へ `migrations/0002_trial_onboarding.sql` と `migrations/0003_service_admin_email.sql` を順番に適用します。次にBrevoで送信者を確認し、Cloudflare Pagesへ `BREVO_API_KEY`、`EMAIL_SENDER_ADDRESS`、`EMAIL_SENDER_NAME` を登録します。APIキーはGitHubやブラウザ側のJavaScriptへ保存しません。
+本機能を有効化する前に、D1へ `migrations/0001_passcode_auth.sql` から `migrations/0004_vendor_identity.sql` までを順番に適用します。`wrangler d1 migrations apply smoke-window-check-db --remote` で未適用分だけを反映できます。次にBrevoで送信者を確認し、Cloudflare Pagesへ `BREVO_API_KEY`、`EMAIL_SENDER_ADDRESS`、`EMAIL_SENDER_NAME` を登録します。APIキーはGitHubやブラウザ側のJavaScriptへ保存しません。
 
 期限案内はGitHub Actionsの `.github/workflows/trial-reminders.yml` が毎日実行します。同じ32文字以上の値をCloudflareの `JOB_SECRET` とGitHub Actionsの `TRIAL_REMINDER_JOB_SECRET` に登録します。案内は試験終了3日前と1日前に1回ずつ送信され、D1の送信履歴で二重送信を防止します。
 

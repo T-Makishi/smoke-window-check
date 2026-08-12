@@ -1,0 +1,12 @@
+{
+  "name": "smoke-window-check",
+  "pages_build_output_dir": ".",
+  "d1_databases": [
+    {
+      "binding": "APP_DB",
+      "database_name": "smoke-window-check-db",
+      "database_id": "a9cc1437-40c5-404d-b285-5937b0a936f4",
+      "migrations_dir": "migrations"
+    }
+  ]
+}
