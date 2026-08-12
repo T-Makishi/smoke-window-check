@@ -1,6 +1,9 @@
 import {database} from './db.js';
 import {serviceAdminEmail} from './auth.js';
 import {HttpError} from './http.js';
+import {LABELS} from '../../js/estimate-config.js';
+import {symptomLabels} from '../../js/estimate.js';
+import {interviewRows} from '../../js/interview-config.js';
 
 const BREVO_ENDPOINT='https://api.brevo.com/v3/smtp/email';
 
@@ -22,14 +25,60 @@ export async function deliverEmail(env,{eventKey,eventType,to,toName='',replyTo=
 }
 
 export async function sendInquiryReceivedEmail(env,{tenantId,inquiryId,caseNumber,companyName,recipient,inquiry}){
-  const customer=inquiry.customer,site=inquiry.site,diagnosis=inquiry.diagnosis,estimate=inquiry.estimate,media=inquiry.media;
-  const customerName=customer.companyName||customer.storeName||customer.facilityName||customer.contactName;
-  const address=[site.prefecture,site.city,site.address,site.buildingName,site.floor,site.room].filter(Boolean).join(' ');
-  const rows=[['受付番号',caseNumber],['依頼者',customerName],['担当者',customer.contactName],['電話番号',customer.phone],['メール',customer.email||'未入力'],['現場住所',address],['現場名',site.siteName||'未入力'],['症状',diagnosis.symptoms.join('、')],['メーカー',diagnosis.makerName||'不明'],['設置高さ',labelValue('height',diagnosis.heightType)],['対象数量',labelValue('quantity',diagnosis.quantity)],['緊急度',labelValue('urgency',diagnosis.urgency)],['概算金額',`${formatYen(estimate.minimumPrice)}〜${formatYen(estimate.maximumPrice)}`],['写真・動画',`${media.count}点（実データはメール・サーバーに保存されません）`]];
-  const text=`${companyName} ご担当者様\n\n新しい排煙窓事前チェックを受け付けました。\n\n${rows.map(([label,value])=>`${label}：${value}`).join('\n')}\n\n業者設定画面の「問い合わせ管理」で詳細を確認できます。`;
-  const html=`<h2>新しい排煙窓事前チェック</h2><p><strong>案件番号：${escapeHtml(caseNumber)}</strong></p><table style="border-collapse:collapse;width:100%;max-width:720px">${rows.map(([label,value])=>`<tr><th style="padding:7px;text-align:left;border-bottom:1px solid #d9e2dd">${escapeHtml(label)}</th><td style="padding:7px;border-bottom:1px solid #d9e2dd">${escapeHtml(value)}</td></tr>`).join('')}</table><p>業者設定画面の「問い合わせ管理」で詳細・対応状況・社内メモを確認できます。</p>`;
+  const {text,html,customerName}=formatInquiryReceivedEmail({caseNumber,companyName,inquiry});
+  const customer=inquiry.customer;
   const replyTo=customer.email?{email:customer.email,name:customer.contactName||customerName}:null;
   return deliverEmail(env,{eventKey:`inquiry-received:${inquiryId}`,eventType:'inquiry_received',to:recipient,toName:companyName,replyTo,subject:`【排煙窓事前チェック／${caseNumber}】${customerName}`,textContent:text,htmlContent:html,tenantId});
+}
+
+export function formatInquiryReceivedEmail({caseNumber,companyName,inquiry}){
+  const customer=inquiry.customer,site=inquiry.site,diagnosis=inquiry.diagnosis,estimate=inquiry.estimate,inspection=inquiry.inspectionFee,media=inquiry.media,result=inquiry.presentedResult||{};
+  const customerName=customer.companyName||customer.storeName||customer.facilityName||customer.contactName;
+  const address=[site.postalCode&&`〒${site.postalCode}`,site.prefecture,site.city,site.address,site.buildingName,site.floor,site.room].filter(Boolean).join(' ');
+  const questions=interviewRows(diagnosis);
+  const informationSections=[
+    ['受付情報', [['受付番号',caseNumber]]],
+    ['ご依頼者情報', [
+      ['依頼者区分',LABELS.customerType[inquiry.customerType]||inquiry.customerType],['会社・店舗・施設名',customerName],
+      ['担当者名',customer.contactName],['電話番号',customer.phone],['メール',customer.email||'未入力']
+    ]],
+    ['現場・症状', [
+      ['現場住所',address],['現場名',site.siteName||'未入力'],['症状',symptomLabels(diagnosis).join('、')||'未入力'],
+      ['メーカー',diagnosis.makerName||'不明'],['設置高さ',LABELS.height[diagnosis.heightType]||diagnosis.heightType||'未入力'],
+      ['対象数量',LABELS.quantity[diagnosis.quantity]||diagnosis.quantity||'未入力'],['緊急度',LABELS.urgency[diagnosis.urgency]||diagnosis.urgency||'未入力'],
+      ['補足',diagnosis.notes||'なし']
+    ]]
+  ];
+  const resultRows=[
+    ['確認が必要な内容',result.summary],
+    ['不足している情報',Array.isArray(result.missingItems)&&result.missingItems.length?result.missingItems.join('、'):result.missingItems?.length===0?'現在の入力項目はそろっています':'未入力'],
+    ['次の対応',result.recommendation||result.nextAction],
+    ['安全上のご案内',result.safetyNotice],
+    ['注意事項',result.disclaimer]
+  ].filter(([,value])=>value);
+  const closingSections=[
+    ['費用のご案内', [
+      ['概算費用',`${formatYen(estimate.minimumPrice)}〜${formatYen(estimate.maximumPrice)}`],
+      ['現地調査費',`現地調査のみの場合 ${formatYen(inspection.amount)}`],
+      ['工事を正式依頼',`工事代金から${formatYen(inspection.deductionOnFormalOrder)}を差し引く`],
+      ['現地調査費確認',inspection.agreed?'確認済み':'未確認']
+    ]],
+    ['添付ファイル', [['写真・動画',`${media.count}点`],['保存状況','写真・動画の実データはメール・サーバーに保存されません']]]
+  ];
+  const textSections=sections=>sections.map(([title,rows])=>`■ ${title}\n${rows.map(([label,value])=>`${label}：${value}`).join('\n')}`).join('\n\n');
+  const questionText=questions.length
+    ?questions.map(([question,answer],index)=>`Q${index+1}. ${question}\nA. ${answer}`).join('\n\n')
+    :'回答はありません。';
+  const resultText=resultRows.length?`\n\n■ お客様に提示した事前チェック結果\n${resultRows.map(([label,value])=>`${label}：\n  ${value}`).join('\n')}`:'';
+  const text=`${companyName} ご担当者様\n\n新しい排煙窓事前チェックを受け付けました。\n\n${textSections(informationSections)}\n\n■ 選択式問診の回答\n${questionText}${resultText}\n\n${textSections(closingSections)}\n\n業者設定画面の「問い合わせ管理」で詳細・対応状況・社内メモを確認できます。`;
+  const informationHtml=informationSections.map(([title,rows])=>emailSection(title,rows)).join('');
+  const closingHtml=closingSections.map(([title,rows])=>emailSection(title,rows)).join('');
+  const questionHtml=questions.length
+    ?questions.map(([question,answer],index)=>`<div style="margin:0 0 16px"><p style="margin:0 0 5px;font-weight:700;color:#0d2b45">Q${index+1}. ${escapeHtml(question)}</p><p style="margin:0;padding:10px 12px;background:#eef6f1;border-left:4px solid #1e5e3a">A. ${escapeHtml(answer)}</p></div>`).join('')
+    :'<p>回答はありません。</p>';
+  const resultHtml=resultRows.length?emailSection('お客様に提示した事前チェック結果',resultRows,{stacked:true}):'';
+  const html=`<div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans JP',sans-serif;color:#1f2b25;line-height:1.7;max-width:720px"><p>${escapeHtml(companyName)} ご担当者様</p><h2 style="color:#0d2b45;margin-bottom:8px">新しい排煙窓事前チェック</h2><p style="margin-top:0">見出しごとに内容を整理しています。</p>${informationHtml}<h3 style="color:#1e5e3a;border-bottom:2px solid #1e5e3a;padding-bottom:6px">選択式問診の回答</h3>${questionHtml}${resultHtml}${closingHtml}<p style="margin-top:24px;padding:14px;background:#f3f6f4">業者設定画面の「問い合わせ管理」で詳細・対応状況・社内メモを確認できます。</p></div>`;
+  return {text,html,customerName};
 }
 
 export async function sendVerificationEmail(env,{applicationId,companyName,contactName,email,verificationUrl,tokenHash}){
@@ -94,6 +143,11 @@ async function recordEmail(env,{eventKey,eventType,to,tenantId,applicationId,sta
 }
 
 function escapeHtml(value){return String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]))}
+function emailSection(title,rows,{stacked=false}={}){
+  const body=stacked
+    ?rows.map(([label,value])=>`<div style="padding:10px 0;border-bottom:1px solid #d9e2dd"><strong style="display:block;color:#0d2b45;margin-bottom:3px">${escapeHtml(label)}</strong><span>${escapeHtml(value)}</span></div>`).join('')
+    :`<table role="presentation" style="border-collapse:collapse;width:100%">${rows.map(([label,value])=>`<tr><th style="width:34%;padding:8px;text-align:left;vertical-align:top;border-bottom:1px solid #d9e2dd;color:#0d2b45">${escapeHtml(label)}</th><td style="padding:8px;vertical-align:top;border-bottom:1px solid #d9e2dd">${escapeHtml(value)}</td></tr>`).join('')}</table>`;
+  return `<h3 style="color:#1e5e3a;border-bottom:2px solid #1e5e3a;padding-bottom:6px;margin-top:26px">${escapeHtml(title)}</h3>${body}`;
+}
 function formatJapan(value){return new Intl.DateTimeFormat('ja-JP',{dateStyle:'long',timeStyle:'short',timeZone:'Asia/Tokyo'}).format(new Date(value))}
 function formatYen(value){return `${Number(value||0).toLocaleString('ja-JP')}円`}
-function labelValue(group,value){const labels={height:{ground:'床から2m未満',ladder:'2〜4m程度',high:'4m以上',unknown:'不明'},quantity:{one:'1窓',twoThree:'2〜3窓',fourPlus:'4窓以上',unknown:'不明'},urgency:{normal:'通常',soon:'できるだけ早く',emergency:'緊急'}};return labels[group]?.[value]||value||'未入力'}

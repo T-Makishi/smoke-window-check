@@ -26,7 +26,13 @@ export function inquiryInput(body){
   const inspectionFee={amount:amount(inspectionSource.amount),taxType:inspectionSource.taxType==='excluded'?'excluded':'included',chargeWhenInspectionOnly:Boolean(inspectionSource.chargeWhenInspectionOnly),deductionOnFormalOrder:amount(inspectionSource.deductionOnFormalOrder),agreed:inspectionSource.agreed===true,agreedAt:text(inspectionSource.agreedAt,50)};
   const mediaNames=Array.isArray(mediaSource.names)?mediaSource.names.map(value=>text(value,200)).filter(Boolean).slice(0,3):[];
   const media={count:Math.max(0,Math.min(3,Number(mediaSource.count)||0)),saved:false,names:mediaNames};
-  const presentedResult={heading:text(presentedSource.heading),summary:text(presentedSource.summary),nextAction:text(presentedSource.nextAction),urgency:text(presentedSource.urgency),disclaimer:text(presentedSource.disclaimer)};
+  const presentedResult={
+    heading:text(presentedSource.heading),summary:text(presentedSource.summary),nextAction:text(presentedSource.nextAction),
+    recommendation:text(presentedSource.recommendation),safetyNotice:text(presentedSource.safetyNotice),
+    missingItems:Array.isArray(presentedSource.missingItems)?presentedSource.missingItems.map(value=>text(value,300)).filter(Boolean).slice(0,10):[],
+    priceLabel:text(presentedSource.priceLabel),inspectionLabel:text(presentedSource.inspectionLabel),
+    urgency:text(presentedSource.urgency),disclaimer:text(presentedSource.disclaimer)
+  };
   const clientSubmissionId=text(source.clientSubmissionId,100),customerType=text(draft.customerType,50);
   if(!/^case_[A-Za-z0-9_-]{8,80}$/.test(clientSubmissionId))throw new HttpError(400,'invalid_submission','送信内容を確認できません。');
   if(!customerType||!customer.contactName||!customer.phone)throw new HttpError(400,'invalid_customer','依頼者名と電話番号を確認してください。');
