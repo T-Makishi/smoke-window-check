@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {DEFAULT_SETTINGS} from '../js/estimate-config.js';
-import {renderCustomerGuide,renderHome,renderPrintReport,renderSettings} from '../js/ui.js';
+import {renderCustomerGuide,renderHome,renderPrintReport,renderSettings,renderVendorInquiries} from '../js/ui.js';
 
 test('顧客トップに開始・操作ガイド・電話の導線を表示する',()=>{
   const settings=structuredClone(DEFAULT_SETTINGS);
@@ -145,6 +145,18 @@ test('運営者設定は重要操作を先頭に置き分類別に整理する',
   assert.match(html,/概算料金・加算額/);
   assert.match(html,/画面表示・案内文/);
   assert.match(html,/問診結果を受け取るメールアドレス/);
+});
+
+test('業者の問い合わせ管理にCSV定期保存案内を常設する',()=>{
+  const html=renderVendorInquiries([],{},{});
+  assert.match(html,/問い合わせをCSVでバックアップ/);
+  assert.match(html,/月1回を目安/);
+  assert.match(html,/サービス運営者は個別データの復旧を保証しません/);
+  assert.match(html,/アプリへ戻す機能はありません/);
+  assert.match(html,/写真・動画の実データも含まれない/);
+  assert.match(html,/運営者へ送信しません/);
+  assert.match(html,/vendor-inquiry-export/);
+  assert.match(html,/まだCSVを保存していません/);
 });
 
 test('会社別のお客様URLを問診画面へ直接統一する',async()=>{

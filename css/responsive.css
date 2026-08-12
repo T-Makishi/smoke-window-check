@@ -80,6 +80,7 @@
   .inquiry-entry-card { grid-template-columns: 1fr; }
   .inquiry-entry-card > div:last-child { justify-items: stretch; }
   .vendor-inquiries__header { align-items: stretch; flex-direction: column; }
+  .inquiry-backup { grid-template-columns: 1fr; }
   .inquiry-search { grid-template-columns: 1fr; }
   .inquiry-search .tool-row { grid-column: 1; }
   .inquiry-list-summary { grid-template-columns: 1fr; }

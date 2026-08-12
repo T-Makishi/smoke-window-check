@@ -58,6 +58,19 @@ export async function loadVendorInquiries(tenantId,{query='',status='',id=''},{f
   return requestJson(url,{fetcher,credentials:'same-origin'});
 }
 
+export async function exportVendorInquiriesCsv(tenantId,{fetcher=fetch,origin=location.origin}={}){
+  const url=new URL('/api/vendor/inquiries-export',origin);url.searchParams.set('tenant',tenantId);
+  let response;
+  try{response=await fetcher(url.toString(),{credentials:'same-origin'})}
+  catch{throw platformError('network_error','CSVを保存できません。通信状態を確認してください。')}
+  if(!response.ok){
+    const type=response.headers?.get?.('content-type')||'';
+    if(type.includes('application/json'))try{const data=await response.json();throw platformError(data.error?.code||'export_failed',data.error?.message||'CSVを保存できませんでした。')}catch(error){if(error?.code)throw error}
+    throw platformError('export_failed','CSVを保存できませんでした。時間をおいて再度お試しください。');
+  }
+  return {blob:await response.blob(),filename:csvFilename(response.headers?.get?.('content-disposition')),count:Number(response.headers?.get?.('x-record-count')||0)};
+}
+
 export async function updateVendorInquiry(tenantId,input,{fetcher=fetch,origin=location.origin}={}){
   const url=new URL('/api/vendor/inquiries',origin);url.searchParams.set('tenant',tenantId);
   return requestJson(url,{fetcher,credentials:'same-origin',method:'PATCH',headers:{'content-type':'application/json'},body:JSON.stringify(input)});
@@ -137,3 +150,4 @@ async function requestJson(url,{fetcher,credentials,method='GET',headers,body}={
 
 function platformError(code,message){const error=new Error(message);error.code=code;return error}
 function stateMessage(state){return ({expired:'試験利用期間が終了しています。',suspended:'このアプリは現在停止されています。',not_found:'お客様用URLを確認できません。'}[state]||'利用情報を確認できません。')}
+function csvFilename(disposition){const matched=String(disposition||'').match(/filename="?([^";]+)"?/i);return matched?.[1]||`smoke-window-inquiries-${new Date().toISOString().slice(0,10)}.csv`}
