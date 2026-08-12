@@ -2,11 +2,11 @@ import {HttpError} from './http.js';
 
 export const BILLING_TERMS_VERSION='2026-08-12';
 export const BILLING_PRIVACY_VERSION='2026-08-12';
-export const BILLING_COMMERCE_VERSION='2026-08-12';
+export const BILLING_COMMERCE_VERSION='2026-08-13';
 export const BILLING_GRACE_DAYS=7;
 export const BILLING_PLANS={
   monthly:{code:'monthly',name:'月額プラン',amountYen:2980,interval:'month'},
-  annual:{code:'annual',name:'年額プラン',amountYen:29800,interval:'year'},
+  annual:{code:'annual',name:'年額プラン',amountYen:30360,interval:'year',discountLabel:'約15％割引',monthlyEquivalentYen:2530},
 };
 
 export function billingPlan(value){const plan=BILLING_PLANS[String(value||'')];if(!plan)throw new HttpError(400,'invalid_plan','料金プランを選択してください。');return plan}

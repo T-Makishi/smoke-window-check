@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {BILLING_PLANS,addGrace,billingAccessState,billingPublic} from '../functions/_lib/billing.js';
 import {verifyStripeWebhook} from '../functions/_lib/stripe.js';
 
-test('料金は月額2980円・年額29800円で固定する',()=>{assert.equal(BILLING_PLANS.monthly.amountYen,2980);assert.equal(BILLING_PLANS.annual.amountYen,29800)});
+test('料金は月額2980円・年額30360円で固定する',()=>{assert.equal(BILLING_PLANS.monthly.amountYen,2980);assert.equal(BILLING_PLANS.annual.amountYen,30360);assert.equal(BILLING_PLANS.annual.monthlyEquivalentYen,2530);assert.equal(BILLING_PLANS.annual.discountLabel,'約15％割引')});
 test('支払失敗の猶予期間は7日間',()=>{assert.equal(addGrace('2026-08-12T00:00:00.000Z'),'2026-08-19T00:00:00.000Z')});
 test('公開契約情報にStripe顧客IDを含めない',()=>{const value=billingPublic({status:'active',plan_code:'monthly',provider_customer_id:'cus_secret',provider_subscription_id:'sub_secret'},{STRIPE_SECRET_KEY:'x',STRIPE_WEBHOOK_SECRET:'y',STRIPE_PRICE_MONTHLY:'a',STRIPE_PRICE_ANNUAL:'b'});assert.equal(value.configured,true);assert.equal(JSON.stringify(value).includes('cus_secret'),false)});
 test('支払失敗の猶予期限内だけ公開利用を継続する',()=>{const now=new Date('2026-08-12T00:00:00.000Z');assert.equal(billingAccessState({status:'past_due',grace_ends_at:'2026-08-13T00:00:00.000Z'},now),'active');assert.equal(billingAccessState({status:'past_due',grace_ends_at:'2026-08-11T23:59:59.000Z'},now),'suspended');assert.equal(billingAccessState({status:'canceled',current_period_end:'2026-08-31T00:00:00.000Z'},now),'active');assert.equal(billingAccessState({status:'unpaid'},now),'suspended')});

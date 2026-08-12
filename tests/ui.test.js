@@ -74,7 +74,8 @@ test('業者向けLPフッターに運営者専用の管理入口を表示する
 test('契約画面はPC幅を活用しスマートフォンでは1列へ戻す',async()=>{
   const html=await readFile(new URL('../contract.html',import.meta.url),'utf8');
   const css=await readFile(new URL('../css/contract.css',import.meta.url),'utf8');
-  assert.match(html,/contract\.css\?v=20260813a/);
+  assert.match(html,/contract\.css\?v=20260813b/);
+  assert.match(await readFile(new URL('../js/contract.js',import.meta.url),'utf8'),/plan-discount/);
   assert.match(css,/\.contract-page\{display:grid;grid-template-columns:minmax\(0,1\.65fr\) minmax\(320px,\.8fr\)/);
   assert.match(css,/max-width:1180px/);
   assert.match(css,/@media\(max-width:980px\)/);
