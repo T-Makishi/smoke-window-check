@@ -65,8 +65,7 @@
   .customer-guide__qr canvas { width: 92px; height: 92px; }
   .demo-banner,.demo-step-note { align-items: flex-start; flex-direction: column; }
   .guide-screen-grid { grid-template-columns: 1fr; gap: 28px; }
-  .guide-screen-card--wide { grid-column: 1; }
-  .guide-screen-shot--phone { width: min(100%,320px); }
+  .guide-screen-shot--phone { width: min(100%,300px); }
   .guide-screen-grid figcaption { font-size: 15px; }
   .settings-header { grid-template-columns: 1fr; gap: 12px; }
   .settings-jump-nav { top: calc(var(--header-height) + 72px); margin-right: -6px; margin-left: -6px; }

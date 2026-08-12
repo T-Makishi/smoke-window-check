@@ -49,16 +49,19 @@ test('無料体験フォームは申込操作と本人確認後の処理を明�
   assert.doesNotMatch(html,/>確認メールを受け取る</);
 });
 
-test('顧客操作ガイドは実際のアプリ画面4枚を表示する',async()=>{
+test('顧客操作ガイドは同一比率の実画面プレビュー4枚を表示する',async()=>{
   const app=await readFile(new URL('../js/app.js',import.meta.url),'utf8');
   const css=await readFile(new URL('../css/components.css',import.meta.url),'utf8');
   assert.match(app,/実際の画面で見る操作手順/);
-  assert.match(app,/step-1-start\.jpg/);
-  assert.match(app,/step-2-symptoms\.jpg/);
-  assert.match(app,/step-3-photos\.jpg/);
-  assert.match(app,/step-4-send\.jpg/);
+  assert.match(app,/guidePreview=/);
+  assert.match(app,/\$\{demoPath\}home/);
+  assert.match(app,/\$\{demoPath\}2/);
+  assert.match(app,/\$\{demoPath\}3/);
+  assert.match(app,/\$\{demoPath\}7/);
+  assert.match(app,/スマートフォン枠の中でも実際に操作できます/);
   assert.doesNotMatch(app,/printCustomerGuide/);
   assert.match(css,/guide-screen-grid/);
+  assert.match(css,/aspect-ratio: 390 \/ 780/);
 });
 
 test('業者向けLPフッターに運営者専用の管理入口を表示する',async()=>{
