@@ -14,7 +14,7 @@
   <link rel="stylesheet" href="css/forms.css">
   <link rel="stylesheet" href="css/buttons.css">
   <link rel="stylesheet" href="css/cards.css">
-  <link rel="stylesheet" href="css/trial.css?v=20260811l">
+  <link rel="stylesheet" href="css/trial.css?v=20260812m">
 </head>
 <body class="trial-page">
   <header class="trial-header">
@@ -96,15 +96,76 @@
 
     <section class="trial-section trial-workflow" id="workflow">
       <div class="trial-shell">
-        <div class="section-lead center-lead"><p class="eyebrow">From trial to service</p><h2 class="headline-lines"><span>無料登録から現地調査前の確認まで、</span><span>6ステップ。</span></h2><p>登録後は会社情報と料金を設定し、普段使っているメールやLINEを中心に運用できます。</p></div>
-        <ol class="workflow-list workflow-list--six">
-          <li><span class="workflow-number">01</span><div class="workflow-icon" aria-hidden="true">申</div><h3>無料体験を申し込む</h3><p>会社名・担当者名・業務用メールを登録します。</p></li>
-          <li><span class="workflow-number">02</span><div class="workflow-icon" aria-hidden="true">認</div><h3>メールを確認</h3><p>本人確認後、会社専用の利用環境を受け取ります。</p></li>
-          <li><span class="workflow-number">03</span><div class="workflow-icon" aria-hidden="true">設</div><h3>自社情報を設定</h3><p>受付メール・ロゴ・概算料金・現地調査条件を登録します。</p></li>
-          <li><span class="workflow-number">04</span><div class="workflow-icon" aria-hidden="true">送</div><h3>依頼者へ案内</h3><p>会社専用URLをLINE・メール・QRコードで送ります。</p></li>
-          <li><span class="workflow-number">05</span><div class="workflow-icon" aria-hidden="true">問</div><h3>依頼者が事前問診</h3><p>症状・現場情報を入力し、送信画面で写真・動画を添付します。</p></li>
-          <li><span class="workflow-number">06</span><div class="workflow-icon" aria-hidden="true">判</div><h3>内容を見て対応判断</h3><p>受付メールで内容を確認し、概算案内や現地調査を判断します。</p></li>
-        </ol>
+        <div class="section-lead center-lead">
+          <p class="eyebrow">Simple workflow</p>
+          <h2 class="headline-lines"><span>最初の設定は1回だけ。</span><span>普段は送って、確認するだけ。</span></h2>
+          <p>難しい操作はありません。無料体験の準備と、実際の受付を分けて説明します。</p>
+        </div>
+
+        <section class="workflow-phase workflow-phase--setup" aria-labelledby="workflow-setup-title">
+          <header class="workflow-phase__head">
+            <span class="workflow-phase__badge">最初の1回だけ</span>
+            <div><h3 id="workflow-setup-title">無料体験の準備</h3><p>案内に沿って会社情報を登録します。</p></div>
+          </header>
+          <ol class="workflow-flow">
+            <li class="workflow-step workflow-step--vendor">
+              <span class="workflow-step__number">1</span>
+              <div class="workflow-step__visual" aria-hidden="true">
+                <svg viewBox="0 0 160 100"><rect x="31" y="9" width="98" height="82" rx="7"/><path d="M31 27h98M48 43h64M48 57h47M48 71h33"/><circle cx="115" cy="71" r="13"/><path d="m109 71 4 4 8-9"/></svg>
+              </div>
+              <div class="workflow-step__copy"><span>申込画面</span><h4>無料体験を申し込む</h4><p>会社名・担当者名・業務用メールを入力します。</p></div>
+            </li>
+            <li class="workflow-step workflow-step--mail">
+              <span class="workflow-step__number">2</span>
+              <div class="workflow-step__visual" aria-hidden="true">
+                <svg viewBox="0 0 160 100"><rect x="24" y="17" width="112" height="67" rx="7"/><path d="m28 24 52 36 52-36"/><rect x="51" y="63" width="58" height="13" rx="6"/><path d="m70 69 7 5 13-15"/></svg>
+              </div>
+              <div class="workflow-step__copy"><span>確認メール</span><h4>届いたメールを開く</h4><p>メール内の確認ボタンを押します。</p></div>
+            </li>
+            <li class="workflow-step workflow-step--vendor">
+              <span class="workflow-step__number">3</span>
+              <div class="workflow-step__visual" aria-hidden="true">
+                <svg viewBox="0 0 160 100"><rect x="27" y="12" width="106" height="76" rx="7"/><path d="M43 34h74M43 53h74M43 72h74"/><circle cx="65" cy="34" r="6"/><circle cx="100" cy="53" r="6"/><circle cx="76" cy="72" r="6"/></svg>
+              </div>
+              <div class="workflow-step__copy"><span>業者設定</span><h4>会社情報を設定する</h4><p>受付メール・料金・ロゴ・案内文を登録します。</p></div>
+            </li>
+          </ol>
+        </section>
+
+        <section class="workflow-phase workflow-phase--daily" aria-labelledby="workflow-daily-title">
+          <header class="workflow-phase__head">
+            <span class="workflow-phase__badge">普段の受付</span>
+            <div><h3 id="workflow-daily-title">毎回行うのは、この3ステップ</h3><p>いつものLINE・メールと受信箱を使えます。</p></div>
+          </header>
+          <ol class="workflow-flow">
+            <li class="workflow-step workflow-step--vendor">
+              <span class="workflow-step__number">1</span>
+              <div class="workflow-step__visual" aria-hidden="true">
+                <svg viewBox="0 0 160 100"><rect x="18" y="14" width="58" height="74" rx="9"/><path d="M35 25h24M38 78h18"/><path d="M91 30h46v36H91zM91 32l23 18 23-18"/><path d="M76 50h15"/><path d="m84 43 7 7-7 7"/><rect x="115" y="70" width="23" height="20"/><path d="M119 74h4v4h-4zM130 74h4v4h-4zM119 82h4v4h-4zM128 82h6v5h-6z"/></svg>
+              </div>
+              <div class="workflow-step__copy"><span>業者</span><h4>お客様へURLを送る</h4><p>LINE・メール・QRコードから選んで案内します。</p></div>
+            </li>
+            <li class="workflow-step workflow-step--customer">
+              <span class="workflow-step__number">2</span>
+              <div class="workflow-step__visual" aria-hidden="true">
+                <svg viewBox="0 0 160 100"><rect x="46" y="7" width="68" height="87" rx="10"/><path d="M66 18h28M69 83h22"/><rect x="56" y="29" width="48" height="25" rx="3"/><path d="m58 51 12-12 9 8 7-6 16 10"/><circle cx="94" cy="36" r="3"/><path d="M58 65h44M58 74h31"/><path d="m117 61 7 7 13-16"/></svg>
+              </div>
+              <div class="workflow-step__copy"><span>見積依頼者</span><h4>お客様が入力する</h4><p>症状・設置状況を回答し、写真・動画を添付します。</p></div>
+            </li>
+            <li class="workflow-step workflow-step--mail">
+              <span class="workflow-step__number">3</span>
+              <div class="workflow-step__visual" aria-hidden="true">
+                <svg viewBox="0 0 160 100"><rect x="18" y="17" width="82" height="65" rx="6"/><path d="m21 23 38 29 38-29"/><rect x="83" y="36" width="59" height="51" rx="6"/><path d="M96 50h32M96 61h26M96 72h18"/><circle cx="130" cy="75" r="14"/><path d="m123 75 5 5 9-11"/></svg>
+              </div>
+              <div class="workflow-step__copy"><span>業者</span><h4>回答メールを確認する</h4><p>内容を見て、概算案内や訪問準備を進めます。</p></div>
+            </li>
+          </ol>
+        </section>
+
+        <div class="workflow-summary" aria-label="覚える操作は2つだけ">
+          <strong>覚える操作は2つだけ</strong>
+          <span>専用URLを送る</span><i aria-hidden="true">→</i><span>回答メールを確認する</span>
+        </div>
       </div>
     </section>
 

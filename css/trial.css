@@ -28,3 +28,36 @@ html{scroll-behavior:smooth;scroll-padding-top:82px}.trial-page{margin:0;color:v
 .trial-footer__admin:hover,.trial-footer__admin:focus-visible{color:#fff;border-bottom-color:#fff}
 .trial-footer__admin span{margin:0;letter-spacing:0}
 @media(max-width:700px){.trial-footer__actions{align-items:flex-start}}
+
+/* 初回設定と普段の受付を分け、パソコンに不慣れな利用者にも流れを伝える。 */
+.workflow-phase{margin-top:24px;overflow:hidden;background:#fff;border:1px solid var(--trial-line);border-radius:12px;box-shadow:0 16px 38px rgba(12,41,64,.07)}
+.workflow-phase__head{display:flex;align-items:center;gap:22px;padding:22px 26px;background:#eaf0f5;border-bottom:1px solid #cfdae3}
+.workflow-phase__badge{display:inline-flex;min-width:116px;justify-content:center;padding:8px 13px;color:#fff;font-size:12px;font-weight:900;background:var(--trial-ink);border-radius:99px}
+.workflow-phase__head h3{margin:0;color:var(--trial-ink);font-size:23px;line-height:1.4}
+.workflow-phase__head p{margin:3px 0 0;color:var(--trial-muted);font-size:13px;line-height:1.6}
+.workflow-phase--daily{margin-top:34px;border-color:#b6d3c6}
+.workflow-phase--daily .workflow-phase__head{background:#e9f4ef;border-bottom-color:#c2dacf}
+.workflow-phase--daily .workflow-phase__badge{background:var(--trial-green)}
+.workflow-flow{display:grid;grid-template-columns:repeat(3,1fr);margin:0;padding:0;list-style:none}
+.workflow-step{position:relative;display:grid;grid-template-columns:48px 1fr;grid-template-rows:auto 1fr;column-gap:16px;min-width:0;padding:26px 28px 30px;border-right:1px solid var(--trial-line)}
+.workflow-step:last-child{border-right:0}
+.workflow-step:not(:last-child):after{position:absolute;top:79px;right:-17px;z-index:2;display:grid;width:34px;height:34px;place-items:center;color:var(--trial-ink);font-size:21px;font-weight:900;background:#fff;border:2px solid #cad7df;border-radius:50%;content:"→"}
+.workflow-step__number{display:grid;width:43px;height:43px;place-items:center;align-self:start;color:#fff;font-size:17px;font-weight:900;background:var(--trial-ink);border-radius:50%}
+.workflow-step__visual{display:grid;height:112px;place-items:center;margin-bottom:20px;color:#274f6b;background:#f0f5f8;border-radius:8px}
+.workflow-step__visual svg{width:86%;height:94px;fill:none;stroke:currentColor;stroke-width:2.7;stroke-linecap:round;stroke-linejoin:round}
+.workflow-step__copy{grid-column:1/-1}
+.workflow-step__copy>span{display:block;margin-bottom:7px;color:#607a8c;font-size:11px;font-weight:900;letter-spacing:.08em}
+.workflow-step__copy h4{margin:0 0 9px;color:var(--trial-ink);font-size:20px;line-height:1.5}
+.workflow-step__copy p{margin:0;color:var(--trial-muted);font-size:13px;line-height:1.75}
+.workflow-step--mail .workflow-step__number{background:#2874a6}
+.workflow-step--mail .workflow-step__visual{color:#2874a6;background:#edf6fb}
+.workflow-step--mail .workflow-step__copy>span{color:#2874a6}
+.workflow-step--customer .workflow-step__number{background:var(--trial-green)}
+.workflow-step--customer .workflow-step__visual{color:var(--trial-green);background:#edf6f1}
+.workflow-step--customer .workflow-step__copy>span{color:var(--trial-green)}
+.workflow-summary{display:flex;align-items:center;justify-content:center;gap:16px;margin-top:26px;padding:19px 24px;color:var(--trial-ink);background:#fff;border:2px solid var(--trial-green);border-radius:10px}
+.workflow-summary strong{margin-right:12px;color:var(--trial-green);font-size:15px}
+.workflow-summary span{padding:9px 14px;font-size:14px;font-weight:900;background:#edf5f1;border-radius:6px}
+.workflow-summary i{color:var(--trial-green);font-size:22px;font-style:normal;font-weight:900}
+@media(max-width:980px){.workflow-step{padding:22px 20px 26px}.workflow-step__copy h4{font-size:17px}.workflow-phase__head h3{font-size:21px}}
+@media(max-width:700px){.workflow-phase{margin-top:18px;border-radius:9px}.workflow-phase--daily{margin-top:26px}.workflow-phase__head{align-items:flex-start;flex-direction:column;gap:10px;padding:19px 20px}.workflow-phase__badge{min-width:0;font-size:11px}.workflow-phase__head h3{font-size:20px}.workflow-flow{grid-template-columns:1fr}.workflow-step{grid-template-columns:40px 1fr;padding:20px;border-right:0;border-bottom:1px solid var(--trial-line)}.workflow-step:last-child{border-bottom:0}.workflow-step:not(:last-child):after{top:auto;right:auto;bottom:-15px;left:calc(50% - 15px);width:30px;height:30px;font-size:18px;content:"↓"}.workflow-step__number{width:37px;height:37px;font-size:14px}.workflow-step__visual{height:104px}.workflow-step__copy h4{font-size:18px}.workflow-summary{align-items:stretch;flex-direction:column;gap:8px;padding:18px}.workflow-summary strong{margin:0 0 3px;text-align:center}.workflow-summary span{text-align:center}.workflow-summary i{align-self:center;line-height:1;transform:rotate(90deg)}}

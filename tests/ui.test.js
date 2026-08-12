@@ -88,7 +88,7 @@ test('業者向けLP内で保存・送信しない操作モックを提供する
   assert.match(app,/入力内容を保存・送信していません/);
 });
 
-test('業者向けLPは現地調査前の価値・三者関係・無料登録から事前確認までを説明する',async()=>{
+test('業者向けLPは現地調査前の価値・三者関係・初回設定と普段の受付を分けて説明する',async()=>{
   const business=await readFile(new URL('../trial.html',import.meta.url),'utf8');
   assert.match(business,/現地へ向かう前に/);
   assert.match(business,/必要な情報をそろえる/);
@@ -97,9 +97,16 @@ test('業者向けLPは現地調査前の価値・三者関係・無料登録か
   assert.match(business,/アプリ運営者/);
   assert.match(business,/排煙窓業者/);
   assert.match(business,/見積依頼者/);
-  assert.match(business,/無料登録から現地調査前の確認まで/);
-  assert.match(business,/6ステップ/);
-  assert.match(business,/送信画面で写真・動画を添付/);
+  assert.match(business,/最初の設定は1回だけ/);
+  assert.match(business,/最初の1回だけ/);
+  assert.match(business,/毎回行うのは、この3ステップ/);
+  assert.match(business,/届いたメールを開く/);
+  assert.match(business,/お客様へURLを送る/);
+  assert.match(business,/回答メールを確認する/);
+  assert.match(business,/症状・設置状況を回答し、写真・動画を添付/);
+  assert.match(business,/workflow-phase--setup/);
+  assert.match(business,/workflow-phase--daily/);
+  assert.doesNotMatch(business,/workflow-list--six/);
 });
 
 test('運営者設定は重要操作を先頭に置き分類別に整理する',()=>{
