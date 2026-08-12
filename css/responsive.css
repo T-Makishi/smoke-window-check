@@ -93,13 +93,29 @@
 }
 @media print {
   @page { size: A4 portrait; margin: 10mm; }
-  .app-header, .site-header, .progress-section, .progress-wrap, .fixed-actions, .actions, .no-print { display: none !important; }
+  .app-header, .site-header, .progress-section, .progress-wrap, .fixed-actions, .actions, .home-actions, .toast, .no-print { display: none !important; }
   html, body { width: auto; min-width: 0; background: #fff; }
   body { font-size: 13px; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   main, .page-container { max-width: none; min-height: auto; margin: 0; padding: 0; }
   .screen { animation: none; }
   .card { box-shadow: none; break-inside: avoid; }
   .print-only { display: block; }
+  body.is-printing #main { display: none !important; }
+  body.is-printing .print-report { display: block; }
+  .print-report__sheet { color: #102d46; }
+  .print-report__header { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; margin-bottom: 12px; padding-bottom: 10px; border-bottom: 2px solid var(--color-primary); }
+  .print-report__header h1 { margin: 2px 0 0; font-size: 22px; line-height: 1.25; }
+  .print-report__meta { display: grid; flex: 0 0 auto; gap: 2px; text-align: right; }
+  .print-report__meta span { color: #5f706b; font-size: 10px; }
+  .print-report__case { display: flex; justify-content: space-between; gap: 12px; margin-bottom: 10px; padding: 8px 10px; background: #eef6f2; border-radius: 6px; }
+  .print-report__sheet .stack { gap: 8px; }
+  .print-report__sheet .card { padding: 10px 12px; }
+  .print-report__sheet .card h2 { margin-bottom: 6px; font-size: 15px; }
+  .print-report__sheet .summary-row { padding: 4px 0; }
+  .print-report__sheet .summary-row dt, .print-report__sheet .summary-row dd { font-size: 10.5px; line-height: 1.35; }
+  .print-report__footer { margin-top: 10px; padding-top: 8px; border-top: 1px solid #ccd9d3; color: #5f706b; font-size: 9.5px; line-height: 1.45; }
+  .print-report__footer p { margin: 0 0 4px; }
+  .print-report__footer small { display: block; text-align: right; }
   body.printing-guide .customer-guide__document { padding: 0; border: 0; box-shadow: none; }
   body.printing-guide .customer-guide__header { padding-bottom: 10px; }
   body.printing-guide .customer-guide__header h1 { font-size: 24px; }

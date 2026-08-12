@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {DEFAULT_SETTINGS} from '../js/estimate-config.js';
-import {renderCustomerGuide,renderHome,renderSettings} from '../js/ui.js';
+import {renderCustomerGuide,renderHome,renderPrintReport,renderSettings} from '../js/ui.js';
 
 test('顧客トップに開始・操作ガイド・電話の導線を表示する',()=>{
   const settings=structuredClone(DEFAULT_SETTINGS);
@@ -26,6 +26,17 @@ test('顧客操作ガイドに4手順・注意事項・QR印刷領域を表示�
   assert.match(html,/結果を確認して送る/);
   assert.match(html,/guideQrCanvas/);
   assert.match(html,/PCSAPO \/ マキシ企画/);
+});
+
+test('印刷用の問診結果票に完了画面の操作ボタンを含めない',()=>{
+  const settings=structuredClone(DEFAULT_SETTINGS);
+  const draft={customerType:'corporate',customer:{companyName:'テスト設備',contactName:'山田',phone:'090-0000-0000',email:''},site:{city:'那覇市',address:'1-1',siteName:'テスト現場'},diagnosis:{symptoms:['heavy'],interviewAnswers:{},buildingType:'office',heightType:'smallLadder',quantity:'1',makerName:'',urgency:'normal',notes:''},media:{count:0},estimate:{minimumPrice:20000,maximumPrice:40000},inspectionFee:{agreed:true},presentedResult:{heading:'現地確認をご案内します',summary:'入力内容を確認しました',nextAction:'業者から連絡します',urgency:'通常',disclaimer:'概算です'},createdAt:'2026-08-12T10:00:00.000Z'};
+  const html=renderPrintReport(draft,settings);
+  assert.match(html,/問診結果票/);
+  assert.match(html,/テスト設備/);
+  assert.match(html,/症状・選択式問診/);
+  assert.doesNotMatch(html,/問診内容をメールで送る/);
+  assert.doesNotMatch(html,/data-action="print"/);
 });
 
 test('無料体験フォームは申込操作と本人確認後の処理を明示する',async()=>{

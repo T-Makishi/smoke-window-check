@@ -7,7 +7,7 @@ import {validateStep} from './validation.js';
 import {buildMailto,caseText,copyText} from './export.js?v=20260812c';
 import {clone,debounce,download,uid} from './utils.js';
 import {settingsFromForm,resetSettings} from './settings.js';
-import {customerFields,renderCustomerGuide,renderDetail,renderHistory,renderHome,renderSettings,renderStep} from './ui.js?v=20260812c';
+import {customerFields,renderCustomerGuide,renderDetail,renderHistory,renderHome,renderPrintReport,renderSettings,renderStep} from './ui.js?v=20260812d';
 import {hashPasscode,verifyPasscode} from './security.js';
 import {applyCustomerConfigFromUrl,buildCustomerUrl} from './recipient-link.js';
 import {buildTenantCustomerUrl,clearVendorIdentitySession,clearVendorPasscodeSession,isTenantUrl,loadProductionRequest,loadPublicTenant,loadVendorPasscodeState,loadVendorTenant,mergePublicSettings,readTenantId,remainingTrialDays,requestVendorIdentityLink,saveVendorTenant,submitProductionRequest,submitVendorPasscode,vendorLoginUrl,wantsAdmin} from './cloudflare-platform.js';
@@ -278,7 +278,21 @@ function enhanceTenantSecurityCard(){if(!platform.tenantId||!platform.vendorAuth
 function requestSettingsAccess(){if(platform.tenantId){if(platform.vendorAuthenticated){appState.screen='settings';render();return}const url=new URL(location.href);url.searchParams.set('t',platform.tenantId);url.searchParams.set('admin','1');location.href=url.toString();return}showModal('業者設定を開く','<p>この画面は排煙窓会社の担当者専用です。</p><div class="field"><label for="settingsPasscode">パスコード</label><input id="settingsPasscode" type="password" inputmode="numeric" maxlength="8" autocomplete="current-password"><p class="error" id="passcodeError" hidden></p></div>',verifySettingsPasscode);const save=document.querySelector('#modalSave');save.textContent='確認して開く';document.querySelector('#settingsPasscode').focus()}
 async function verifySettingsPasscode(){const input=document.querySelector('#settingsPasscode'),error=document.querySelector('#passcodeError');if(!(await verifyPasscode(input.value,settings.security.settingsPasscodeHash))){error.textContent='パスコードが違います。';error.hidden=false;input.classList.add('is-invalid');input.select();return}closeModal();appState.screen='settings';render()}
 
-function printCurrentView(){const previousTitle=document.title;const customer=appState.draft?.customer;document.title=`排煙窓事前チェック_${customer?.companyName||customer?.storeName||customer?.facilityName||customer?.contactName||'相談内容'}`;const restore=()=>{document.title=previousTitle;document.body.classList.remove('is-printing')};document.body.classList.add('is-printing');try{window.print();restore();setTimeout(()=>toast('印刷画面が開かない場合は、ブラウザのメニューから「印刷」または「プリント」を選択してください。'),100)}catch{restore();toast('印刷画面を開けませんでした。ブラウザのメニューから「印刷」または「プリント」を選択してください。')}}
+function printCurrentView(){
+  if(!appState.draft)return;
+  document.querySelector('#printReport')?.remove();
+  const previousTitle=document.title,customer=appState.draft.customer;
+  const report=document.createElement('div');
+  report.id='printReport';report.className='print-report';report.setAttribute('aria-hidden','true');
+  report.innerHTML=renderPrintReport(appState.draft,settings);document.body.append(report);
+  document.title=`排煙窓事前チェック_${customer?.companyName||customer?.storeName||customer?.facilityName||customer?.contactName||'相談内容'}`;
+  document.body.classList.add('is-printing');
+  let cleaned=false,fallback;
+  const cleanup=()=>{if(cleaned)return;cleaned=true;clearTimeout(fallback);window.removeEventListener('afterprint',cleanup);document.title=previousTitle;document.body.classList.remove('is-printing');report.remove()};
+  window.addEventListener('afterprint',cleanup,{once:true});
+  fallback=setTimeout(cleanup,60000);
+  try{window.print()}catch{cleanup();toast('印刷画面を開けませんでした。ブラウザのメニューから「印刷」または「プリント」を選択してください。')}
+}
 function customerGuideUrl(){try{return platform.tenantId?buildTenantCustomerUrl(platform.tenantId,location.href):buildCustomerUrl(settings,location.href)}catch{return ''}}
 function renderGuideQr(){enhanceGuideVisuals();const canvas=document.querySelector('#guideQrCanvas'),url=customerGuideUrl();if(!canvas||!url||typeof window.qrcode!=='function')return;try{const qr=window.qrcode(0,'L');qr.addData(url,'Byte');qr.make();const context=canvas.getContext('2d');if(!context)return;context.fillStyle='#fff';context.fillRect(0,0,canvas.width,canvas.height);renderQrIntoBox(qr,context,0,0,canvas.width)}catch{canvas.closest('.customer-guide__qr')?.remove()}}
 function enhanceGuideVisuals(){const steps=document.querySelector('.guide-steps');if(!steps||document.querySelector('.guide-visuals'))return;const visuals=document.createElement('section');visuals.className='guide-visuals';visuals.setAttribute('aria-label','実際の画面で見る操作手順');visuals.innerHTML=`<h2>実際の画面で見る操作手順</h2><p class="guide-visuals__lead">画面の表示例を見ながら、上から順番に操作してください。</p><div class="guide-screen-grid"><figure><div class="guide-screen-shot guide-screen-shot--phone"><img src="assets/guide/step-1-start.jpg" alt="実際の事前チェック開始画面" loading="lazy"></div><figcaption><b>1</b><span>緑色の「事前チェックを始める」を押します。</span></figcaption></figure><figure><div class="guide-screen-shot guide-screen-shot--phone"><img src="assets/guide/step-2-symptoms.jpg" alt="実際の症状選択画面" loading="lazy"></div><figcaption><b>2</b><span>当てはまる症状を選び、「次へ進む」を押します。症状は複数選べます。</span></figcaption></figure><figure class="guide-screen-card--wide"><div class="guide-screen-shot"><img src="assets/guide/step-3-photos.jpg" alt="実際の写真と動画の選択画面" loading="lazy"></div><figcaption><b>3</b><span>排煙窓の全体・操作部分・不具合箇所を撮影し、写真・動画を選びます。</span></figcaption></figure><figure class="guide-screen-card--wide"><div class="guide-screen-shot"><img src="assets/guide/step-4-send.jpg" alt="実際の内容保存完了画面" loading="lazy"></div><figcaption><b>4</b><span>内容を保存した後、メール画面で写真・動画を添付して送信します。</span></figcaption></figure></div><p class="guide-visuals__note">会社ごとの設定により、会社名・料金・案内文の表示は異なります。</p>`;steps.before(visuals)}
