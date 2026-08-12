@@ -64,10 +64,10 @@
   .customer-guide__contact a { font-size: 20px; }
   .customer-guide__qr canvas { width: 92px; height: 92px; }
   .demo-banner,.demo-step-note { align-items: flex-start; flex-direction: column; }
-  .guide-phone-grid { grid-template-columns: 1fr; gap: 24px; }
-  .guide-phone { width: 210px; }
-  .guide-phone__screen { min-height: 270px; }
-  .guide-phone-grid figcaption { max-width: 280px; margin-right: auto; margin-left: auto; font-size: 15px; }
+  .guide-screen-grid { grid-template-columns: 1fr; gap: 28px; }
+  .guide-screen-card--wide { grid-column: 1; }
+  .guide-screen-shot--phone { width: min(100%,320px); }
+  .guide-screen-grid figcaption { font-size: 15px; }
   .settings-header { grid-template-columns: 1fr; gap: 12px; }
   .settings-jump-nav { top: calc(var(--header-height) + 72px); margin-right: -6px; margin-left: -6px; }
   .settings-form { grid-template-columns: 1fr; }
@@ -117,16 +117,4 @@
   body.printing-guide .customer-guide__contact a { font-size: 18px; }
   body.printing-guide .customer-guide__qr canvas { width: 82px; height: 82px; }
   body.printing-guide .customer-guide__brand { margin-top: 6px; }
-  body.printing-guide .guide-visuals { margin: 10px 0; padding: 8px; }
-  body.printing-guide .guide-visuals > h2 { font-size: 15px; }
-  body.printing-guide .guide-visuals__lead { margin-bottom: 8px; font-size: 10px; }
-  body.printing-guide .guide-phone-grid { grid-template-columns: repeat(4,minmax(0,1fr)); gap: 6px; }
-  body.printing-guide .guide-phone { width: 110px; padding: 4px; border-width: 2px; border-radius: 12px; box-shadow: none; }
-  body.printing-guide .guide-phone::before { width: 30px; height: 3px; margin-bottom: 3px; }
-  body.printing-guide .guide-phone__bar { padding: 3px; font-size: 6px; }
-  body.printing-guide .guide-phone__screen { min-height: 135px; gap: 4px; padding: 8px 5px; }
-  body.printing-guide .guide-phone__screen small,.printing-guide .guide-choice,.printing-guide .guide-upload,.printing-guide .guide-next,.printing-guide .guide-tap-target { font-size: 5.5px; }
-  body.printing-guide .guide-phone-grid figcaption { grid-template-columns: 18px 1fr; gap: 4px; margin-top: 4px; font-size: 7px; line-height: 1.35; }
-  body.printing-guide .guide-phone-grid figcaption b { width: 17px; height: 17px; }
-  body.printing-guide .guide-steps { display: none; }
 }

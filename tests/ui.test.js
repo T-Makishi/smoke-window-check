@@ -4,7 +4,7 @@ import {readFile} from 'node:fs/promises';
 import {DEFAULT_SETTINGS} from '../js/estimate-config.js';
 import {renderCustomerGuide,renderHome,renderSettings} from '../js/ui.js';
 
-test('顧客トップに開始・操作ガイド・印刷・電話の導線を表示する',()=>{
+test('顧客トップに開始・操作ガイド・電話の導線を表示する',()=>{
   const settings=structuredClone(DEFAULT_SETTINGS);
   Object.assign(settings.company,{name:'テスト設備株式会社',phone:'03-1234-5678'});
   const html=renderHome(settings,false);
@@ -12,7 +12,8 @@ test('顧客トップに開始・操作ガイド・印刷・電話の導線を�
   assert.match(html,/事前チェックを始める/);
   assert.match(html,/現地調査前に必要な症状・設置状況・写真を整理/);
   assert.match(html,/操作方法を見る/);
-  assert.match(html,/説明書を印刷・PDF保存/);
+  assert.doesNotMatch(html,/説明書を印刷・PDF保存/);
+  assert.doesNotMatch(html,/data-action="print-guide"/);
   assert.match(html,/tel:0312345678/);
 });
 
@@ -37,12 +38,23 @@ test('無料体験フォームは申込操作と本人確認後の処理を明�
   assert.doesNotMatch(html,/>確認メールを受け取る</);
 });
 
-test('顧客操作ガイドはスマートフォン図解と印刷導線を追加する',async()=>{
+test('顧客操作ガイドは実際のアプリ画面4枚を表示する',async()=>{
   const app=await readFile(new URL('../js/app.js',import.meta.url),'utf8');
   const css=await readFile(new URL('../css/components.css',import.meta.url),'utf8');
-  assert.match(app,/スマートフォン画面で見る操作手順/);
-  assert.match(app,/赤い枠の場所を順番に押してください/);
-  assert.match(css,/guide-phone-grid/);
+  assert.match(app,/実際の画面で見る操作手順/);
+  assert.match(app,/step-1-start\.jpg/);
+  assert.match(app,/step-2-symptoms\.jpg/);
+  assert.match(app,/step-3-photos\.jpg/);
+  assert.match(app,/step-4-send\.jpg/);
+  assert.doesNotMatch(app,/printCustomerGuide/);
+  assert.match(css,/guide-screen-grid/);
+});
+
+test('業者向けLPフッターに運営者専用の管理入口を表示する',async()=>{
+  const html=await readFile(new URL('../trial.html',import.meta.url),'utf8');
+  assert.match(html,/サービス運営者ログイン/);
+  assert.match(html,/href="\/service\.html"/);
+  assert.match(html,/利用契約管理画面/);
 });
 
 test('運営管理は申込の再送・手動承認と運営者メール変更を備える',async()=>{

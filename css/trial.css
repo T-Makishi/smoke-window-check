@@ -20,3 +20,11 @@ html{scroll-behavior:smooth;scroll-padding-top:82px}.trial-page{margin:0;color:v
 @media(max-width:360px){.trial-shell{width:calc(100% - 24px)}.trial-header{gap:8px;padding-inline:10px}.trial-brand{gap:8px}.trial-brand__mark{width:32px;height:32px}.trial-brand strong{max-width:112px;font-size:10px;line-height:1.25}.trial-brand small{font-size:7px}.trial-header__cta{padding:9px 10px;font-size:10px}.section-lead h2,.trial-section h2,.trial-apply h2{font-size:26px}.state-card{padding-inline:20px}.customer-demo-phone{height:610px}}
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
 @media(min-width:981px){.trial-page p,.trial-page li,.trial-page dd{line-break:strict;text-wrap:pretty}.trial-page h1,.trial-page h2,.trial-page h3{line-break:strict;text-wrap:balance}.trial-hero__copy{width:min(720px,62%)}.trial-hero h1{font-size:clamp(46px,4.35vw,64px);line-height:1.16;white-space:nowrap}.trial-lead{max-width:680px}.headline-lines span{white-space:nowrap}.center-lead{max-width:900px}.product-grid{grid-template-columns:1fr 1.15fr;gap:60px}.product-copy h2{font-size:clamp(38px,3.3vw,46px);white-space:nowrap}.customer-demo-copy h2,.trial-security h2,.apply-intro h2{font-size:clamp(36px,3.2vw,46px)}.trial-security h2,.apply-intro h2{white-space:nowrap}.security-grid{gap:70px}.apply-grid{grid-template-columns:.9fr 1.1fr;gap:70px}.story-scene h3,.relationship-map h3,.workflow-list h3,.feature-grid h3,.start-list strong{text-wrap:balance}}
+
+/* 運営者専用の入口は一般の無料体験導線と分離してフッターだけに表示する。 */
+.trial-footer .trial-shell > div{display:flex;flex-direction:column}
+.trial-footer__actions{align-items:flex-end;gap:8px}
+.trial-footer__admin{display:inline-flex;align-items:center;gap:5px;color:#9fb2a9;font-size:10px;text-decoration:none;border-bottom:1px solid rgba(159,178,169,.45)}
+.trial-footer__admin:hover,.trial-footer__admin:focus-visible{color:#fff;border-bottom-color:#fff}
+.trial-footer__admin span{margin:0;letter-spacing:0}
+@media(max-width:700px){.trial-footer__actions{align-items:flex-start}}
