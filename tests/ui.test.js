@@ -34,7 +34,7 @@ test('無料体験フォームは申込操作と本人確認後の処理を明�
   assert.match(html,/確認完了後、運営者へ正式申込として通知され、会社専用URLが発行されます/);
   assert.match(html,/業者が見積依頼者へ案内する事前問診画面/);
   assert.match(html,/browser-mock/);
-  assert.match(html,/\?demo=1&amp;embed=1/);
+  assert.match(html,/index\.html\?demo=1&amp;embed=1/);
   assert.doesNotMatch(html,/>確認メールを受け取る</);
 });
 
@@ -78,7 +78,7 @@ test('業者向けLP内で保存・送信しない操作モックを提供する
   assert.match(business,/browser-mock/);
   assert.doesNotMatch(business,/href="\/\?demo=1"/);
   assert.match(business,/customer-demo-phone/);
-  assert.match(business,/\?demo=1&amp;embed=1/);
+  assert.match(business,/index\.html\?demo=1&amp;embed=1/);
   assert.match(business,/見るだけではありません。実際に操作できます/);
   assert.match(business,/操作体験を始める/);
   assert.match(business,/id="interactive-phone"/);
