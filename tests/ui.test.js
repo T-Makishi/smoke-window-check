@@ -71,6 +71,17 @@ test('業者向けLPフッターに運営者専用の管理入口を表示する
   assert.match(html,/利用契約管理画面/);
 });
 
+test('契約画面はPC幅を活用しスマートフォンでは1列へ戻す',async()=>{
+  const html=await readFile(new URL('../contract.html',import.meta.url),'utf8');
+  const css=await readFile(new URL('../css/contract.css',import.meta.url),'utf8');
+  assert.match(html,/contract\.css\?v=20260813a/);
+  assert.match(css,/\.contract-page\{display:grid;grid-template-columns:minmax\(0,1\.65fr\) minmax\(320px,\.8fr\)/);
+  assert.match(css,/max-width:1180px/);
+  assert.match(css,/@media\(max-width:980px\)/);
+  assert.match(css,/@media\(max-width:700px\)/);
+  assert.match(css,/\.contract-page\{display:block;width:calc\(100% - 32px\);max-width:none/);
+});
+
 test('運営管理は申込の再送・手動承認と運営者メール変更を備える',async()=>{
   const admin=await readFile(new URL('../js/service-admin.js',import.meta.url),'utf8');
   assert.match(admin,/本人確認メールを再送/);
