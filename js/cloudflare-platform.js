@@ -116,6 +116,16 @@ export async function submitProductionRequest(tenantId,body,{fetcher=fetch,origi
   return requestJson(url,{fetcher,credentials:'same-origin',method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body)});
 }
 
+export async function loadVendorSubscription(tenantId,{fetcher=fetch,origin=location.origin}={}){
+  const url=new URL('/api/vendor/subscription',origin);url.searchParams.set('tenant',tenantId);
+  return requestJson(url,{fetcher,credentials:'same-origin'});
+}
+
+export async function updateVendorSubscription(tenantId,body,{fetcher=fetch,origin=location.origin}={}){
+  const url=new URL('/api/vendor/subscription',origin);url.searchParams.set('tenant',tenantId);
+  return requestJson(url,{fetcher,credentials:'same-origin',method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body)});
+}
+
 export function mergePublicSettings(base,incoming){
   if(!incoming||typeof incoming!=='object')return base;
   return {

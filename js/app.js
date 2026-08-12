@@ -10,7 +10,7 @@ import {settingsFromForm,resetSettings} from './settings.js';
 import {customerFields,renderCustomerGuide,renderDetail,renderHistory,renderHome,renderPrintReport,renderSettings,renderStep,renderVendorInquiries,renderVendorInquiryDetail} from './ui.js?v=20260812f';
 import {hashPasscode,verifyPasscode} from './security.js';
 import {applyCustomerConfigFromUrl,buildCustomerUrl} from './recipient-link.js';
-import {buildTenantCustomerUrl,clearVendorIdentitySession,clearVendorPasscodeSession,deleteVendorInquiry,exportVendorInquiriesCsv,isTenantUrl,loadProductionRequest,loadPublicTenant,loadVendorInquiries,loadVendorPasscodeState,loadVendorTenant,mergePublicSettings,readTenantId,remainingTrialDays,requestVendorIdentityLink,saveVendorTenant,submitProductionRequest,submitPublicInquiry,submitVendorPasscode,updateVendorInquiry,vendorLoginUrl,wantsAdmin} from './cloudflare-platform.js?v=20260812i';
+import {buildTenantCustomerUrl,clearVendorIdentitySession,clearVendorPasscodeSession,deleteVendorInquiry,exportVendorInquiriesCsv,isTenantUrl,loadPublicTenant,loadVendorInquiries,loadVendorPasscodeState,loadVendorSubscription,loadVendorTenant,mergePublicSettings,readTenantId,remainingTrialDays,requestVendorIdentityLink,saveVendorTenant,submitPublicInquiry,submitVendorPasscode,updateVendorInquiry,vendorLoginUrl,wantsAdmin} from './cloudflare-platform.js?v=20260812j';
 
 const main=document.querySelector('#main'),progress=document.querySelector('#progressWrap'),headerCompany=document.querySelector('#headerCompany');
 const LOGO_MAX_SOURCE_BYTES=1024*1024,LOGO_EDGE=64,LOGO_MAX_DATA_URL_LENGTH=1800;
@@ -40,6 +40,14 @@ async function initialize(){
     }catch(error){
       if(wantsAdmin(location.href)&&error.code==='authentication_required'){appState.screen='identity';platform.initializing=false;applySettings();render();return}
       if(wantsAdmin(location.href)&&error.code==='network_error'){renderPlatformUnavailable(error.code,error.tenant);return}
+      if(wantsAdmin(location.href)&&['suspended','expired'].includes(error.code)&&error.tenant){
+        platform.tenant=error.tenant;document.querySelector('#settingsButton').textContent='業者ログイン';
+        try{
+          const auth=await loadVendorPasscodeState(tenantId);platform.passcode=auth.passcode;platform.userEmail=auth.user.email;
+          if(auth.passcode.verified){const vendor=await loadVendorTenant(tenantId);settings=mergePublicSettings(DEFAULT_SETTINGS,vendor.tenant.settings);platform.vendorAuthenticated=true}
+          platform.initializing=false;applySettings();updateLicenseBanner();appState.screen=platform.vendorAuthenticated?'settings':'passcode';render();return;
+        }catch(authError){if(authError.code==='identity_required'){platform.initializing=false;applySettings();appState.screen='identity';render();return}renderPlatformUnavailable(authError.code,authError.tenant);return}
+      }
       renderPlatformUnavailable(error.code,error.tenant);return;
     }
   }
@@ -75,7 +83,7 @@ async function handleClick(e){
     if(action==='vendor-passcode-reset-help')showVendorResetHelp();
     if(action==='vendor-change-passcode')showVendorChangePasscode();
     if(action==='vendor-logout')await logoutVendor();
-    if(action==='vendor-production-request')showProductionRequestDialog();
+    if(action==='vendor-contract')location.href=`/contract.html?t=${encodeURIComponent(platform.tenantId)}`;
     if(action==='start')start();
     if(action==='resume'){const d=storage.getDraft();start(d||null)}
     if(action==='guide'){appState.screen='guide';render()}
@@ -275,20 +283,10 @@ async function changeVendorPasscode(){const current=document.querySelector('#cur
 async function logoutVendor(){try{await clearVendorPasscodeSession(platform.tenantId);await clearVendorIdentitySession(platform.tenantId)}finally{location.href=buildTenantCustomerUrl(platform.tenantId,location.href)}}
 
 async function enhanceTenantLicenseCard(){
-  if(!platform.tenantId||!platform.vendorAuthenticated||platform.tenant?.licenseType==='production')return;
-  const form=document.querySelector('#settingsForm'),days=remainingTrialDays(platform.tenant);if(!form||days===null)return;
-  const card=document.createElement('div');card.className='card trial-admin-card settings-priority-card';card.innerHTML=`<div class="trial-admin-summary"><div><p class="eyebrow">試験利用版</p><h2>${days===0?'無料体験は本日までです':`無料体験は残り${days}日です`}</h2><p class="hint">会社情報・受付メール・料金を設定し、実際の顧客案内と問診受信を確認できます。</p></div><div id="productionRequestArea"><button class="button" type="button" data-action="vendor-production-request">本番利用を申し込む</button></div></div>`;form.prepend(card);
-  try{const result=await loadProductionRequest(platform.tenantId),area=document.querySelector('#productionRequestArea');if(!area)return;if(result.request?.status==='requested')area.innerHTML='<p class="share-ready"><strong>本番利用申込を受け付けました</strong>運営者からの連絡をお待ちください。</p>';if(result.request?.status==='declined')area.innerHTML='<p class="hint">前回の申込は確認終了となっています。必要な場合は再度お申し込みください。</p><button class="button" type="button" data-action="vendor-production-request">本番利用を再度申し込む</button>';}catch{}
-}
-
-function showProductionRequestDialog(){
-  showModal('本番利用を申し込む','<p>運営者が利用状況を確認し、料金・契約条件をご案内します。この送信だけで課金または契約成立にはなりません。</p><div class="field"><label for="productionApplicant">担当者名</label><input id="productionApplicant" maxlength="100" autocomplete="name"></div><div class="field"><label for="productionNote">連絡事項 <span class="optional">任意</span></label><textarea id="productionNote" maxlength="2000" placeholder="希望する連絡方法や質問をご入力ください。"></textarea></div><label class="check-line trial-consent"><input id="productionAgreement" type="checkbox"><span>運営者から料金・契約条件の案内を受けることに同意します。</span></label><p class="error" id="productionRequestError" hidden></p>',submitProductionRequestForm);document.querySelector('#modalSave').textContent='申込を送信';
-}
-
-async function submitProductionRequestForm(){
-  const applicant=document.querySelector('#productionApplicant'),note=document.querySelector('#productionNote'),agreed=document.querySelector('#productionAgreement'),error=document.querySelector('#productionRequestError'),button=document.querySelector('#modalSave');
-  if(!applicant.value.trim()){showPasscodeError(error,applicant,'担当者名を入力してください。');return}if(!agreed.checked){showPasscodeError(error,agreed,'申込条件への同意が必要です。');return}
-  button.disabled=true;try{await submitProductionRequest(platform.tenantId,{applicantName:applicant.value.trim(),note:note.value.trim(),agreed:true});closeModal();render();toast('本番利用の申込を送信しました。')}catch(caught){showPasscodeError(error,applicant,caught.message)}finally{button.disabled=false}
+  if(!platform.tenantId||!platform.vendorAuthenticated)return;
+  const form=document.querySelector('#settingsForm');if(!form)return;const days=remainingTrialDays(platform.tenant);
+  const card=document.createElement('div');card.className='card trial-admin-card settings-priority-card';card.innerHTML=`<div class="trial-admin-summary"><div><p class="eyebrow">${platform.tenant?.licenseType==='production'?'本番利用':'試験利用版'}</p><h2>${days===null?'契約・お支払いを管理':days===0?'無料体験は本日までです':`無料体験は残り${days}日です`}</h2><p class="hint">料金プランの申込、支払方法の変更、解約・再契約を専用画面で管理できます。</p></div><div><button class="button" type="button" data-action="vendor-contract">契約・お支払いを開く</button></div></div>`;form.prepend(card);
+  try{const result=await loadVendorSubscription(platform.tenantId);if(result.subscription?.status==='past_due'){const warning=document.createElement('p');warning.className='error';warning.textContent='お支払いを確認できません。契約・お支払い画面から支払方法を更新してください。';card.append(warning)}}catch{}
 }
 
 function enhanceTenantSecurityCard(){if(!platform.tenantId||!platform.vendorAuthenticated)return;const form=document.querySelector('#settingsForm'),resetRow=form?.querySelector('.settings-reset-row');if(!form||!resetRow)return;const card=document.createElement('details');card.className='card settings-group';card.id='settings-security';card.innerHTML=`<summary><span><strong>ログイン・パスコード</strong><small>ログイン中：${escapeHtml(platform.userEmail)}</small></span></summary><div class="settings-group__body"><p class="hint">メール確認と登録者専用パスコードで保護されています。ログイン状態は24時間有効です。</p><div class="tool-row section"><button class="button secondary" type="button" data-action="vendor-change-passcode">パスコードを変更</button><button class="button ghost" type="button" data-action="vendor-logout">ログアウト</button></div></div>`;form.insertBefore(card,resetRow)}

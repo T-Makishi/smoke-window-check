@@ -4,13 +4,18 @@ import {sendInquiryReceivedEmail} from '../../_lib/email.js';
 import {handleError,HttpError,json,readJson} from '../../_lib/http.js';
 import {inquiryInput,inquirySummary,randomCaseNumber,randomInquiryId} from '../../_lib/inquiries.js';
 import {licenseState} from '../../_lib/trial.js';
+import {billingAccessState} from '../../_lib/billing.js';
 
 export async function onRequestPost({request,env}){
   try{
-    const url=new URL(request.url),tenantId=tenantIdFrom(url.searchParams.get('tenant')),tenant=await findTenant(env,tenantId),state=licenseState(tenant);
+    const url=new URL(request.url),tenantId=tenantIdFrom(url.searchParams.get('tenant')),tenant=await findTenant(env,tenantId),db=database(env);let state=licenseState(tenant);
     if(!tenant)throw new HttpError(404,'not_found','お客様用URLを確認できません。');
+    if(state==='active'&&tenant.license_type==='production'){
+      const subscription=await db.prepare('SELECT status,current_period_end,grace_ends_at FROM billing_subscriptions WHERE tenant_id=?1').bind(tenantId).first();
+      if(billingAccessState(subscription)!=='active')state='suspended';
+    }
     if(state!=='active')throw new HttpError(state==='expired'?410:403,state,state==='expired'?'利用期間が終了しています。':'現在ご利用いただけません。');
-    const {clientSubmissionId,inquiry}=inquiryInput(await readJson(request)),db=database(env);
+    const {clientSubmissionId,inquiry}=inquiryInput(await readJson(request));
     const existing=await db.prepare('SELECT * FROM vendor_inquiries WHERE tenant_id=?1 AND client_submission_id=?2').bind(tenantId,clientSubmissionId).first();
     if(existing)return json({ok:true,inquiry:inquirySummary(existing),deduplicated:true});
     const settings=parseTenantSettings(tenant),now=new Date().toISOString(),id=randomInquiryId(),caseNumber=randomCaseNumber(),customerName=inquiry.customer.companyName||inquiry.customer.storeName||inquiry.customer.facilityName||inquiry.customer.contactName,siteAddress=[inquiry.site.prefecture,inquiry.site.city,inquiry.site.address,inquiry.site.buildingName,inquiry.site.floor,inquiry.site.room].filter(Boolean).join(' '),symptomSummary=inquiry.diagnosis.symptoms.join('、');
