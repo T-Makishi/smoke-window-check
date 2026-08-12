@@ -15,8 +15,13 @@ async function authorizedService(request,env){
 export async function onRequestGet({request,env}){
   try{
     const email=await authorizedService(request,env);
-    const result=await database(env).prepare('SELECT * FROM tenants ORDER BY created_at DESC').all();
-    const tenants=(result.results||[]).map(row=>({...publicTenant(row,licenseState(row)),vendorEmail:row.vendor_email,updatedAt:row.updated_at}));
+    const result=await database(env).prepare(`SELECT tenants.*,
+      (SELECT MAX(created_at) FROM service_audit_events
+       WHERE tenant_id=tenants.id AND event_type='vendor_login_email_limit_reset') AS login_email_limit_reset_at,
+      (SELECT MAX(created_at) FROM service_audit_events
+       WHERE tenant_id=tenants.id AND event_type='vendor_passcode_lock_reset') AS passcode_lock_reset_at
+      FROM tenants ORDER BY tenants.created_at DESC`).all();
+    const tenants=(result.results||[]).map(row=>({...publicTenant(row,licenseState(row)),vendorEmail:row.vendor_email,updatedAt:row.updated_at,loginEmailLimitResetAt:row.login_email_limit_reset_at||null,passcodeLockResetAt:row.passcode_lock_reset_at||null}));
     return json({ok:true,user:{email},tenants});
   }catch(error){return handleError(error)}
 }
@@ -38,9 +43,11 @@ export async function onRequestPost({request,env}){
 
 export async function onRequestPatch({request,env}){
   try{
-    await authorizedService(request,env);
+    const actorEmail=await authorizedService(request,env);
     const body=await readJson(request),id=tenantIdFrom(body.id),row=await findTenant(env,id);
     if(!row)throw new HttpError(404,'not_found','登録が見つかりません。');
+    if(body.action==='reset_login_email_limit')return resetVendorLoginEmailLimit(env,{body,row,actorEmail});
+    if(body.action==='reset_passcode_lock')return resetVendorPasscodeLock(env,{body,row,actorEmail});
     const companyName=body.companyName===undefined?row.company_name:String(body.companyName).trim().slice(0,200);
     const vendorEmail=body.vendorEmail===undefined?row.vendor_email:normalizeEmail(body.vendorEmail);
     const status=body.status===undefined?row.status:String(body.status);
@@ -86,4 +93,41 @@ export async function onRequestDelete({request,env}){
 function randomTenantId(){
   const bytes=crypto.getRandomValues(new Uint8Array(12));
   return `sw_${btoa(String.fromCharCode(...bytes)).replaceAll('+','-').replaceAll('/','_').replace(/=+$/,'')}`;
+}
+
+async function resetVendorLoginEmailLimit(env,{body,row,actorEmail}){
+  requireCompanyConfirmation(body,row);
+  const db=database(env),now=new Date().toISOString(),auditId=randomAuditId();
+  const pending=await db.prepare('SELECT COUNT(*) AS count FROM vendor_login_tokens WHERE tenant_id=?1 AND used_at IS NULL').bind(row.id).first();
+  await db.batch([
+    db.prepare('UPDATE vendor_login_tokens SET used_at=?1 WHERE tenant_id=?2 AND used_at IS NULL').bind(now,row.id),
+    db.prepare(`INSERT INTO service_audit_events
+      (id,event_type,actor_email,tenant_id,details_json,created_at)
+      VALUES (?1,'vendor_login_email_limit_reset',?2,?3,?4,?5)`)
+      .bind(auditId,actorEmail,row.id,JSON.stringify({invalidatedUnusedLinks:Number(pending?.count||0)}),now),
+  ]);
+  return json({ok:true,tenantId:row.id,resetAt:now,invalidatedUnusedLinks:Number(pending?.count||0)});
+}
+
+async function resetVendorPasscodeLock(env,{body,row,actorEmail}){
+  requireCompanyConfirmation(body,row);
+  const db=database(env),now=new Date().toISOString(),subject=vendorPasscodeSubject(row.id),auditId=randomAuditId();
+  const credential=await db.prepare('SELECT failed_attempts,locked_until FROM auth_credentials WHERE subject=?1 AND email=?2').bind(subject,row.vendor_email).first();
+  await db.batch([
+    db.prepare('UPDATE auth_credentials SET failed_attempts=0,locked_until=NULL,updated_at=?1 WHERE subject=?2 AND email=?3').bind(now,subject,row.vendor_email),
+    db.prepare(`INSERT INTO service_audit_events
+      (id,event_type,actor_email,tenant_id,details_json,created_at)
+      VALUES (?1,'vendor_passcode_lock_reset',?2,?3,?4,?5)`)
+      .bind(auditId,actorEmail,row.id,JSON.stringify({previousFailedAttempts:Number(credential?.failed_attempts||0),previousLockedUntil:credential?.locked_until||null}),now),
+  ]);
+  return json({ok:true,tenantId:row.id,resetAt:now,credentialFound:Boolean(credential)});
+}
+
+function requireCompanyConfirmation(body,row){
+  if(String(body.confirmCompanyName||'').trim()!==row.company_name)throw new HttpError(400,'confirmation_mismatch','確認用の会社名が一致しません。');
+}
+
+function randomAuditId(){
+  const bytes=crypto.getRandomValues(new Uint8Array(16));
+  return `audit_${btoa(String.fromCharCode(...bytes)).replaceAll('+','-').replaceAll('/','_').replace(/=+$/,'')}`;
 }

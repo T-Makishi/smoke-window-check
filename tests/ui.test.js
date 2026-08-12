@@ -85,6 +85,18 @@ test('運営管理は申込の再送・手動承認と運営者メール変更�
   assert.match(admin,/ログインIDと無料体験申込の通知先を同時に変更/);
 });
 
+test('運営管理は業者ごとの確認メール制限とパスコードロックを別々に解除できる',async()=>{
+  const admin=await readFile(new URL('../js/service-admin.js',import.meta.url),'utf8');
+  const endpoint=await readFile(new URL('../functions/api/service/tenants.js',import.meta.url),'utf8');
+  assert.match(admin,/確認メール送信制限を解除/);
+  assert.match(admin,/パスコード入力ロックを解除/);
+  assert.match(admin,/確認のため会社名を入力/);
+  assert.match(endpoint,/reset_login_email_limit/);
+  assert.match(endpoint,/reset_passcode_lock/);
+  assert.match(endpoint,/WHERE tenant_id=\?2 AND used_at IS NULL/);
+  assert.match(endpoint,/確認用の会社名が一致しません/);
+});
+
 test('業者向けLP内で保存・送信しない操作モックを提供する',async()=>{
   const business=await readFile(new URL('../trial.html',import.meta.url),'utf8');
   const app=await readFile(new URL('../js/app.js',import.meta.url),'utf8');

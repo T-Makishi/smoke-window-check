@@ -10,6 +10,11 @@ export const VENDOR_DEVICE_SECONDS=30*24*60*60;
 export const VENDOR_LOGIN_MINUTES=15;
 const VENDOR_LOGIN_LIMIT_PER_HOUR=5;
 
+export function effectiveVendorLoginRateWindowStart(hourAgo,lastResetAt){
+  const hourAgoTime=Date.parse(hourAgo),resetTime=Date.parse(lastResetAt||'');
+  return Number.isFinite(resetTime)&&resetTime>hourAgoTime?lastResetAt:hourAgo;
+}
+
 export async function createVendorIdentitySession(env,{tenantId,email,verifiedAt=new Date().toISOString()}){
   const token=randomToken(),tokenHash=await sha256(token),now=new Date(),expiresAt=new Date(now.getTime()+VENDOR_DEVICE_SECONDS*1000).toISOString();
   const db=database(env);
@@ -40,7 +45,9 @@ export async function requestVendorLoginLink(request,env,{tenantId:tenantIdValue
   const state=licenseState(row);
   if(state!=='active')throw new HttpError(state==='expired'?410:403,state,state==='expired'?'試験利用期間が終了しています。':'このアプリは現在停止されています。');
   if(!['login','reset'].includes(purpose))throw new HttpError(400,'invalid_purpose','メール確認の目的が正しくありません。');
-  const db=database(env),now=new Date(),since=new Date(now.getTime()-60*60*1000).toISOString();
+  const db=database(env),now=new Date(),hourAgo=new Date(now.getTime()-60*60*1000).toISOString();
+  const reset=await db.prepare("SELECT MAX(created_at) AS reset_at FROM service_audit_events WHERE tenant_id=?1 AND event_type='vendor_login_email_limit_reset'").bind(tenantId).first();
+  const since=effectiveVendorLoginRateWindowStart(hourAgo,reset?.reset_at);
   const recent=await db.prepare('SELECT COUNT(*) AS count FROM vendor_login_tokens WHERE tenant_id=?1 AND created_at>?2').bind(tenantId,since).first();
   if(Number(recent?.count||0)>=VENDOR_LOGIN_LIMIT_PER_HOUR)throw new HttpError(429,'login_link_rate_limited','確認メールの送信回数が上限に達しました。1時間後にお試しください。');
   const token=randomToken(),tokenHash=await sha256(token),expiresAt=new Date(now.getTime()+VENDOR_LOGIN_MINUTES*60*1000).toISOString();

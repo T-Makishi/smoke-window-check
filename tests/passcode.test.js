@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {derivePasscodeHash,isFreshAccessAuthentication,normalizePasscode,PASSCODE_MAX_ATTEMPTS,PASSCODE_SESSION_SECONDS} from '../functions/_lib/passcode.js';
-import {VENDOR_DEVICE_SECONDS,VENDOR_LOGIN_MINUTES} from '../functions/_lib/vendor-identity.js';
+import {effectiveVendorLoginRateWindowStart,VENDOR_DEVICE_SECONDS,VENDOR_LOGIN_MINUTES} from '../functions/_lib/vendor-identity.js';
 
 test('パスコードは6〜8桁の安全な数字だけを受け付ける',()=>{
   assert.equal(normalizePasscode(' 493827 '),'493827');
@@ -40,6 +40,13 @@ test('認証防御の固定値は24時間・5回失敗である',()=>{
 test('業者認証は端末確認30日・メールリンク15分である',()=>{
   assert.equal(VENDOR_DEVICE_SECONDS,30*24*60*60);
   assert.equal(VENDOR_LOGIN_MINUTES,15);
+});
+
+test('確認メール送信制限は運営者の解除日時以降だけを集計する',()=>{
+  const hourAgo='2026-08-12T00:00:00.000Z';
+  assert.equal(effectiveVendorLoginRateWindowStart(hourAgo,'2026-08-12T00:30:00.000Z'),'2026-08-12T00:30:00.000Z');
+  assert.equal(effectiveVendorLoginRateWindowStart(hourAgo,'2026-08-11T23:30:00.000Z'),hourAgo);
+  assert.equal(effectiveVendorLoginRateWindowStart(hourAgo,null),hourAgo);
 });
 
 function requestWithIssuedAt(iat){
