@@ -9,9 +9,11 @@ export async function deliverEmail(env,{eventKey,eventType,to,toName='',replyTo=
   if(existing?.status==='sent')return {sent:true,messageId:existing.provider_message_id,deduplicated:true};
   const apiKey=String(env.BREVO_API_KEY||''),senderEmail=String(env.EMAIL_SENDER_ADDRESS||env.SERVICE_ADMIN_EMAIL||''),senderName=String(env.EMAIL_SENDER_NAME||'排煙窓事前チェック運営事務局');
   if(!apiKey||!senderEmail)throw new HttpError(503,'email_not_configured','メール送信設定が完了していません。運営者へお問い合わせください。');
+  const recipient={email:to};
+  if(String(toName||'').trim())recipient.name=String(toName).trim();
   let response,data={};
   try{
-    response=await fetch(BREVO_ENDPOINT,{method:'POST',headers:{accept:'application/json','content-type':'application/json','api-key':apiKey},body:JSON.stringify({sender:{email:senderEmail,name:senderName},to:[{email:to,name:toName}],replyTo:replyTo||{email:senderEmail,name:senderName},subject,textContent,htmlContent,tags:['smoke-window-check',eventType]})});
+    response=await fetch(BREVO_ENDPOINT,{method:'POST',headers:{accept:'application/json','content-type':'application/json','api-key':apiKey},body:JSON.stringify({sender:{email:senderEmail,name:senderName},to:[recipient],replyTo:replyTo||{email:senderEmail,name:senderName},subject,textContent,htmlContent,tags:['smoke-window-check',eventType]})});
     data=await response.json().catch(()=>({}));
   }catch(error){await recordEmail(env,{eventKey,eventType,to,tenantId,applicationId,status:'failed',errorMessage:'network_error'});throw new HttpError(503,'email_delivery_failed','確認メールを送信できませんでした。時間をおいて再度お試しください。')}
   if(!response.ok){await recordEmail(env,{eventKey,eventType,to,tenantId,applicationId,status:'failed',errorMessage:String(data.message||`HTTP ${response.status}`).slice(0,500)});throw new HttpError(503,'email_delivery_failed','確認メールを送信できませんでした。時間をおいて再度お試しください。')}
