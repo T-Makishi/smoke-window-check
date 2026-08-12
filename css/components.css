@@ -39,6 +39,8 @@
 .interview-progress > div:first-child { display: flex; align-items: center; justify-content: space-between; gap: 12px; color: var(--color-primary); }
 .interview-progress > div:last-child { height: 8px; overflow: hidden; background: #dfe9e4; border-radius: 99px; }
 .interview-progress i { display: block; height: 100%; background: var(--color-primary); border-radius: inherit; transition: width 180ms ease; }
+.interview-reassurance { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; padding: 12px 14px; color: var(--color-primary); background: #edf6f1; border-left: 4px solid var(--color-primary); border-radius: 8px; }
+.interview-reassurance span { color: var(--color-text-muted); }
 .interview-card { padding: clamp(18px,4vw,28px); background: #f7faf8; border: 1px solid #b9d0c3; border-radius: var(--radius-card); }
 .interview-card legend { max-width: 720px; margin-bottom: 8px; color: var(--color-text); font-size: clamp(22px,5vw,30px); font-weight: 900; line-height: 1.45; }
 .interview-help { margin: 0 0 18px; color: var(--color-text-muted); }

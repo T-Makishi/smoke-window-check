@@ -1,7 +1,7 @@
 import {dateTime,fullAddress,yen} from './utils.js';
 import {LABELS,SYMPTOMS} from './estimate-config.js';
 import {symptomLabels} from './estimate.js';
-import {createPresentedResult,interviewRows,presentedResultRows} from './interview-config.js';
+import {createPresentedResult,interviewRows,presentedResultRows} from './interview-config.js?v=20260812c';
 export function caseText(c,settings){const d=c.diagnosis,cu=c.customer,result=c.presentedResult||createPresentedResult(c,c.estimate,settings,c.updatedAt||c.createdAt||new Date().toISOString());return [
   `【${settings.app.name}】`,`運営会社：${settings.company.name}`,`依頼者区分：${LABELS.customerType[c.customerType]||c.customerType}`,
   cu.companyName&&`会社名：${cu.companyName}`,cu.storeName&&`店舗名：${cu.storeName}`,cu.facilityName&&`施設名：${cu.facilityName}`,

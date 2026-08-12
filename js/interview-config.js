@@ -3,6 +3,7 @@ import {selectedSymptoms} from './estimate.js';
 import {yen} from './utils.js';
 
 export const INTERVIEW_VERSION=1;
+export const INTERVIEW_MAX_QUESTIONS=5;
 
 const ANSWERS={
   yesNoUnknown:[['yes','はい'],['no','いいえ'],['unknown','分からない']],
@@ -25,6 +26,14 @@ export const INTERVIEW_QUESTIONS=[
   {id:'unknown_visible',symptoms:['unknown','other'],question:'見た目で気になる状態はありますか？',answers:[['damage','破損や変形が見える'],['loose','部品の緩み・外れが見える'],['stain','水の跡や汚れがある'],['none','見た目では分からない'],['unknown','分からない']]}
 ];
 
+// 複数症状が選ばれても、高齢者を含む利用者が途中離脱しないよう、
+// 安全確認と初動判断に必要な質問を優先して最大5問に絞る。
+const QUESTION_PRIORITY=[
+  'falling_risk','wire_state','detached_state','control_response','close_state',
+  'open_movement','resistance_timing','noise_type','leak_timing',
+  'visible_obstruction','noise_timing','leak_location','unknown_visible'
+];
+
 const PHOTO_GUIDANCE={
   base:[
     {id:'whole',title:'排煙窓の全体',detail:'窓全体と周囲が入る位置から撮影してください。'},
@@ -41,7 +50,10 @@ const PHOTO_GUIDANCE={
 
 export function interviewQuestionsFor(diagnosis){
   const symptoms=selectedSymptoms(diagnosis);
-  return INTERVIEW_QUESTIONS.filter(question=>question.symptoms.some(symptom=>symptoms.includes(symptom)));
+  const relevant=INTERVIEW_QUESTIONS.filter(question=>question.symptoms.some(symptom=>symptoms.includes(symptom)));
+  return relevant
+    .sort((a,b)=>QUESTION_PRIORITY.indexOf(a.id)-QUESTION_PRIORITY.indexOf(b.id))
+    .slice(0,INTERVIEW_MAX_QUESTIONS);
 }
 
 export function interviewAnswerLabel(questionId,value){
