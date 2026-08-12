@@ -2,7 +2,7 @@
 
 排煙窓の現地調査前に、見積依頼者が症状・設置状況・写真・動画を整理し、業者が対応方針を検討できる事前確認Webアプリです。概算費用と現地調査費の条件も事前に確認できます。
 
-公開先はCloudflare Pagesです。会社情報・料金・利用期限はCloudflare D1へ保存し、業者設定APIはCloudflare Accessのメール確認で保護します。問診内容、写真、動画は従来どおりお客様の端末内だけで扱い、Cloudflareへ保存しません。構成と安全上の判断は `CLOUDFLARE_DESIGN.md` を参照してください。
+公開先はCloudflare Pagesです。会社情報・料金・利用期限はCloudflare D1へ保存します。業者設定はアプリ独自のメール確認、端末認証、パスコードで保護し、サービス運営管理はCloudflare Accessで保護します。問診内容、写真、動画は従来どおりお客様の端末内だけで扱い、Cloudflareへ保存しません。構成と安全上の判断は `CLOUDFLARE_DESIGN.md` を参照してください。
 
 UIはデザインA「信頼感・安心感のあるベーシックデザイン」を採用しています。ダークグリーン、ネイビー、白を基調とし、料金案内だけを淡い黄色で明示しています。最大表示幅は480pxで、iPhone 13と320px幅へ対応しています。主要アイコンは外部ライブラリを使わず、インラインSVGで表示します。
 
@@ -64,8 +64,8 @@ python3 -m http.server 4173
 5. 同じ画面で32文字以上のランダム値を暗号化シークレット `PASSCODE_PEPPER` として設定する。この値を変更すると登録済みパスコードを再登録する必要があるため、通常運用では変更しない。
 6. 設定反映後に本番デプロイを再実行する。
 7. Cloudflare Zero TrustでOne-time PINを有効にする。
-8. `smoke-window-check.pages.dev/api/vendor/*` と `smoke-window-check.pages.dev/api/service/*` をAccessで保護し、セッション時間を24時間にする。
-9. Access通過後もAPI側で認証メールを照合するため、業者はD1に登録したメール、サービス運営者は `SERVICE_ADMIN_EMAIL` だけが操作できる。
+8. `smoke-window-check.pages.dev/api/service/*` だけをAccessで保護し、セッション時間を24時間にする。`/api/vendor/*` はAccessの対象から外す。
+9. 業者はアプリが送る1回限りのメールリンクで端末を確認し、登録パスコードで設定を開く。サービス運営者はAccess通過後も `SERVICE_ADMIN_EMAIL` と照合する。
 10. Pages Functionsの無料枠到達時の動作をFail closedにする。
 
 ## 7日間無料体験の自動発行

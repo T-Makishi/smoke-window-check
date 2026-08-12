@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {derivePasscodeHash,isFreshAccessAuthentication,normalizePasscode,PASSCODE_MAX_ATTEMPTS,PASSCODE_SESSION_SECONDS} from '../functions/_lib/passcode.js';
+import {VENDOR_DEVICE_SECONDS,VENDOR_LOGIN_MINUTES} from '../functions/_lib/vendor-identity.js';
 
 test('パスコードは6〜8桁の安全な数字だけを受け付ける',()=>{
   assert.equal(normalizePasscode(' 493827 '),'493827');
@@ -34,6 +35,11 @@ test('メール再確認直後だけパスコード再設定を許可する',()=
 test('認証防御の固定値は24時間・5回失敗である',()=>{
   assert.equal(PASSCODE_SESSION_SECONDS,24*60*60);
   assert.equal(PASSCODE_MAX_ATTEMPTS,5);
+});
+
+test('業者認証は端末確認30日・メールリンク15分である',()=>{
+  assert.equal(VENDOR_DEVICE_SECONDS,30*24*60*60);
+  assert.equal(VENDOR_LOGIN_MINUTES,15);
 });
 
 function requestWithIssuedAt(iat){

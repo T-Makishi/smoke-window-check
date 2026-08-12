@@ -63,6 +63,16 @@ export async function clearVendorPasscodeSession(tenantId,{fetcher=fetch,origin=
   return requestJson(url,{fetcher,credentials:'same-origin',method:'DELETE'});
 }
 
+export async function requestVendorIdentityLink(tenantId,{email,purpose='login'},{fetcher=fetch,origin=location.origin}={}){
+  const url=new URL('/api/vendor/identity',origin);url.searchParams.set('tenant',tenantId);
+  return requestJson(url,{fetcher,credentials:'same-origin',method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({email,purpose})});
+}
+
+export async function clearVendorIdentitySession(tenantId,{fetcher=fetch,origin=location.origin}={}){
+  const url=new URL('/api/vendor/identity',origin);url.searchParams.set('tenant',tenantId);
+  return requestJson(url,{fetcher,credentials:'same-origin',method:'DELETE'});
+}
+
 export async function loadProductionRequest(tenantId,{fetcher=fetch,origin=location.origin}={}){
   const url=new URL('/api/vendor/production-request',origin);url.searchParams.set('tenant',tenantId);
   return requestJson(url,{fetcher,credentials:'same-origin'});

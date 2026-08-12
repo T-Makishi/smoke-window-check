@@ -1,19 +1,7 @@
-import {authenticatedEmail,emailsMatch,tenantIdFrom} from '../../_lib/auth.js';
-import {findTenant,parseTenantSettings,publicTenant,database} from '../../_lib/db.js';
-import {handleError,HttpError,json,readJson} from '../../_lib/http.js';
-import {licenseState} from '../../_lib/trial.js';
+import {parseTenantSettings,publicTenant,database} from '../../_lib/db.js';
+import {handleError,json,readJson} from '../../_lib/http.js';
 import {settingsJson} from '../../_lib/settings.js';
-import {requirePasscodeSession,VENDOR_PASSCODE_COOKIE,vendorPasscodeSubject} from '../../_lib/passcode.js';
-
-async function authorizedTenant(request,env){
-  const email=authenticatedEmail(request),url=new URL(request.url),id=tenantIdFrom(url.searchParams.get('tenant'));
-  const row=await findTenant(env,id);
-  if(!row||!emailsMatch(row.vendor_email,email))throw new HttpError(403,'forbidden','この業者設定を利用できません。');
-  const state=licenseState(row);
-  if(state!=='active')throw new HttpError(state==='expired'?410:403,state,state==='expired'?'試験利用期間が終了しています。':'このアプリは現在停止されています。');
-  await requirePasscodeSession(request,env,{subject:vendorPasscodeSubject(id),email,cookieName:VENDOR_PASSCODE_COOKIE});
-  return {row,email};
-}
+import {authorizedTenant} from '../../_lib/vendor-auth.js';
 
 export async function onRequestGet({request,env}){
   try{

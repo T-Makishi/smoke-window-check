@@ -33,6 +33,14 @@ export async function sendTrialIssuedEmail(env,{applicationId,tenantId,companyNa
   return deliverEmail(env,{eventKey:`trial-issued:${applicationId}`,eventType:'trial_issued',to:email,toName:contactName,subject,textContent:text,htmlContent:html,tenantId,applicationId});
 }
 
+export async function sendVendorLoginEmail(env,{tenantId,companyName,email,purpose,verificationUrl,tokenHash}){
+  const reset=purpose==='reset',subject=reset?'【排煙窓事前チェック】パスコード再設定の確認':'【排煙窓事前チェック】業者設定ログインの確認';
+  const action=reset?'パスコードを再設定する':'業者設定を開く';
+  const text=`${companyName} ご担当者様\n\n${action}には、次のURLを15分以内に開いてください。\n\n${verificationUrl}\n\nこのリンクは1回限り有効です。心当たりがない場合は操作不要です。`;
+  const html=`<p>${escapeHtml(companyName)} ご担当者様</p><p>${escapeHtml(action)}には、次のボタンを15分以内に押してください。</p><p><a href="${escapeHtml(verificationUrl)}" style="display:inline-block;padding:14px 22px;color:#fff;background:#1e5e3a;border-radius:8px;text-decoration:none;font-weight:700">${escapeHtml(action)}</a></p><p>このリンクは1回限り有効です。</p><p style="color:#65736c">心当たりがない場合は操作不要です。</p>`;
+  return deliverEmail(env,{eventKey:`vendor-${purpose}:${tenantId}:${tokenHash.slice(0,16)}`,eventType:`vendor_${purpose}`,to:email,subject,textContent:text,htmlContent:html,tenantId});
+}
+
 export async function sendOperatorApplicationNotice(env,{applicationId,tenantId,companyName,contactName,email,phone,serviceUrl}){
   const operator=await serviceAdminEmail(env);if(!operator)return {sent:false};
   const subject=`【新規無料体験】${companyName}`;

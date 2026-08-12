@@ -23,10 +23,10 @@ export function normalizePasscode(value){
   return passcode;
 }
 
-export async function passcodeStatus(env,{subject,email,request,cookieName}){
+export async function passcodeStatus(env,{subject,email,request,cookieName,freshEmailAuthenticated=false}){
   const credential=await credentialFor(env,subject,email);
   const verified=credential?await validSession(env,{subject,email,request,cookieName}):false;
-  return {configured:Boolean(credential),verified,resetAllowed:isFreshAccessAuthentication(request)};
+  return {configured:Boolean(credential),verified,resetAllowed:freshEmailAuthenticated||isFreshAccessAuthentication(request)};
 }
 
 export async function registerPasscode(env,{subject,email,passcode,request,cookieName}){
@@ -61,8 +61,8 @@ export async function confirmRegisteredPasscode(env,{subject,email,passcode}){
   return true;
 }
 
-export async function resetRegisteredPasscode(env,{subject,email,passcode,request,cookieName}){
-  if(!isFreshAccessAuthentication(request))throw new HttpError(401,'fresh_email_auth_required','パスコードをリセットするには、メール確認をもう一度行ってください。');
+export async function resetRegisteredPasscode(env,{subject,email,passcode,request,cookieName,freshEmailAuthenticated=false}){
+  if(!freshEmailAuthenticated&&!isFreshAccessAuthentication(request))throw new HttpError(401,'fresh_email_auth_required','パスコードをリセットするには、メール確認をもう一度行ってください。');
   const normalized=normalizePasscode(passcode),salt=randomValue(16),hash=await derivePasscodeHash(normalized,salt,passcodePepper(env)),now=new Date().toISOString();
   await database(env).prepare(`INSERT INTO auth_credentials
     (subject,email,passcode_salt,passcode_hash,failed_attempts,locked_until,created_at,updated_at)
